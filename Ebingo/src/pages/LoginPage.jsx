@@ -1,0 +1,115 @@
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import Cookies from "js-cookie";
+
+
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const [values, setValues] = useState({
+    Username: "",
+    Password: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (loading) return;
+    setLoading(true);
+
+    try {
+
+      const API_URL = import.meta.env.VITE_API_BASE_URL;
+      const { data } = await axios.post(`${API_URL}/auth/login`, {
+        Username: values.Username,
+        Password: values.Password,
+      });
+
+      const { token } = data || {};
+      if (!token) {
+        throw new Error("No token returned from server");
+      }
+
+      // Save token to cookie (1 day)
+      Cookies.set("accessToken", token, { expires: 1, sameSite: "Lax" });
+      
+      // Set default Authorization header so guarded GETs work
+      // axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+      // Decode payload safely
+      let payload = {};
+      try {
+        payload = JSON.parse(atob(token.split(".")[1] || ""));
+      } catch {
+        throw new Error("Invalid token format");
+      }
+
+      const role = (payload.role || "").toLowerCase();
+
+      // If cashier, ensure backend provided a branch_id in the token
+      if (role === "cashier" && !payload.branch_id) {
+        enqueueSnackbar("Cashier must be assigned to a branch.", { variant: "warning" });
+        setLoading(false);
+        return;
+      }
+
+      // Route by role (guard has no /members page)
+      if (role === "guard") {
+        navigate("/guard");
+      } else {
+        navigate(`/${role}/members`);
+      }
+    
+    } catch (err) {
+      console.error("Login error:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Login failed. Please check your credentials.";
+      enqueueSnackbar(msg, { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="w-full h-screen flex justify-center items-center bg-[#F2F0EA]">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col justify-evenly border border-black w-1/4 h-2/5 rounded-xl bg-[#A8D5E3]"
+      >
+        <label className="mx-4">Username</label>
+        <input
+          type="text"
+          required
+          autoComplete="username"
+          value={values.Username}
+          onChange={(e) => setValues({ ...values, Username: e.target.value })}
+          className="outline-none border mx-4 p-2 border-black rounded-md bg-transparent"
+        />
+
+        <label className="mx-4">Password</label>
+        <input
+          type="password"
+          required
+          autoComplete="current-password"
+          value={values.Password}
+          onChange={(e) => setValues({ ...values, Password: e.target.value })}
+          className="outline-none border mx-4 p-2 border-black rounded-md bg-transparent"
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="text-[#212121] hover:text-[#f5f5f5] p-2 rounded-md border border-[#212121] hover:bg-[#212121] duration-300 m-4"
+        >
+          Login
+        </button>
+      </form>
+    </main>
+  );
+};
+
+export default LoginPage;

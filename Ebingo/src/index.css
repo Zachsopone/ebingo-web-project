@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@font-face {
+  font-family: "Code39";
+  src: url("../src/assets/fonts/IDAutomationHC39M Free Version.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --font-code39: "Code39", sans-serif;
+}
+
+
+@layer components {
+  .tooltip-container {
+    position: relative;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .tooltip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.3em 0.6em;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s;
+    background-color: rgb(255, 255, 255);
+    border-radius: 12px;
+    color: rgb(34, 34, 34);
+    border: 1px solid black;
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+
+  .tooltip::before {
+    position: absolute;
+    content: "";
+    height: 0.6em;
+    width: 0.6em;
+    bottom: -0.3em;
+    left: 50%;
+    transform: translate(-50%) rotate(45deg);
+    background-color: rgb(255, 255, 255);
+    border-right: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+
+  .tooltip-container:hover .tooltip {
+    top: -150%; /*height of the tooltip*/
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .tooltip-container1 {
+    position: relative;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .tooltip1 {
+    position: absolute;
+    top: 0;
+    left: -75%;
+    transform: translateX(-50%);
+    padding: 0.3em 0.6em;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s;
+    background-color: rgb(255, 255, 255);
+    border-radius: 12px;
+    color: rgb(34, 34, 34);
+    border: 1px solid black;
+    white-space: nowrap; /* Prevent text wrapping */
+  }
+
+  .tooltip1::before {
+    position: absolute;
+    content: "";
+    height: 0.6em;
+    width: 0.6em;
+    bottom: -0.25em; /* Position the arrow */
+    left: 85%;
+    transform: translate(-50%) rotate(45deg);
+    background-color: rgb(255, 255, 255);
+    border-right: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+
+  .tooltip-container1:hover .tooltip1 {
+    top: -150%; /*height of the tooltip*/
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}

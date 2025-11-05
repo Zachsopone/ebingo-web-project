@@ -1,0 +1,33 @@
+# --- Standard Ignored Files ---
+# Ignore all node_modules directories
+node_modules/
+
+# Ignore production build outputs (Vite/React generates these)
+dist/
+build/
+dist
+build
+
+# Ignore OS files
+.DS_Store
+
+# --- Environment and Secret Files (CRITICAL) ---
+# Ignore environment variables (never commit secrets!)
+.env
+.env.*
+*.env
+/.env.local
+.env.local
+
+# Ignore workspace setup file
+workspaces.npmrc
+
+# --- Logs ---
+*.log
+npm-debug.log*
+
+# --- Specific Folders/Files in your structure ---
+# Ignore the entire Barcode Installer folder
+Barcode Installer/
+
+Readme.txt
