@@ -1,12 +1,12 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 dotenv.config();
-import fs from "fs";
+
 
 let caCert;
 try {
   // Get the path from .env and read the file
-  caCert = fs.readFileSync("C:/ebingo-web-project/backend/ca.pem", "utf8");
+  caCert = process.env.CA;
 } catch (err) {
   console.error("FAILED TO READ ca.pem FILE:", err.message);
   // console.error("Check the certificate in your .env file. Path:", process.env.CA);
