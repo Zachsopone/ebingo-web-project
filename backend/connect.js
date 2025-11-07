@@ -6,10 +6,10 @@ import fs from "fs";
 let caCert;
 try {
   // Get the path from .env and read the file
-  caCert = fs.readFileSync(process.env.CA);
+  caCert = fs.readFileSync("C:/ebingo-web-project/backend/ca.pem", "utf8");
 } catch (err) {
   console.error("FAILED TO READ ca.pem FILE:", err.message);
-  console.error("Check the certificate in your .env file. Path:", process.env.CA);
+  // console.error("Check the certificate in your .env file. Path:", process.env.CA);
   process.exit(1);
 }
 

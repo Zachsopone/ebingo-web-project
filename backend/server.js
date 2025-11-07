@@ -98,8 +98,8 @@ app.get("/guard", verifyUser(["guard", "cashier", "superadmin", "kaizen"]), (req
   return res.json({ Status: "Guard Access", name: req.user });
 });
 
-const PORT = parseInt(process.env.PORT, 10);
+const port = process.env.PORT || 12991;
 
-app.listen(PORT, () => {
-  console.log(`Server is running live on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running live on port ${port}`);
 });
