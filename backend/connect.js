@@ -5,11 +5,9 @@ dotenv.config();
 
 let caCert;
 try {
-  // Get the path from .env and read the file
   caCert = process.env.CA;
 } catch (err) {
-  console.error("FAILED TO READ ca.pem FILE:", err.message);
-  // console.error("Check the certificate in your .env file. Path:", process.env.CA);
+  console.error("FAILED TO READ CA CERTIFICATE FILE:", err.message);
   process.exit(1);
 }
 
@@ -21,7 +19,6 @@ export const db = mysql.createPool({
   port: process.env.PORT,
   password: process.env.PASSWORD,
   database: process.env.DATABASE,
-  ssl_mode: process.env.SSL,
   ssl: {
     ca: caCert
   },
