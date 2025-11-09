@@ -3,7 +3,7 @@ import axios from "axios";
 import MembersCard from "./MembersCard";
 import { useSnackbar } from "notistack";
 import { TbRefresh } from "react-icons/tb";
-import { SelectedOptionContext } from "../context/optionContext";
+import { SelectedOptionContext } from "../context/OptionContext";
 import Cookies from "js-cookie";
 import PropTypes from "prop-types";
 
