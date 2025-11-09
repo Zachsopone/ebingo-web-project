@@ -25,10 +25,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://ebingo-web-project.onrender.com'
+];
+
 app.use(express.json({ limit: "10mb" })); 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ["POST", "GET", "DELETE", "PUT"],
     credentials: true,
   })
