@@ -1,20 +1,24 @@
 // import reactLogo from "./assets/react.svg";
 // import viteLogo from "/vite.svg";
+import { lazy, Suspense } from 'react';
 import { Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import Kaizen from "./pages/Kaizen";
-import SuperAdmin from "./pages/SuperAdmin";
-import Cashier from "./pages/Cashier";
-import Guard from "./pages/Guard";
-import ProtectedRoute from "./route/ProtectedRoute";
-import Branches from "./components/Branches";
-import Users from "./components/Users";
+const Kaizen = lazy(() => import("./pages/Kaizen"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const Cashier = lazy(() => import("./pages/Cashier"));
+const Guard = lazy(() => import("./pages/Guard"));
+const ProtectedRoute = lazy(() => import("./route/ProtectedRoute"));
+const Branches = lazy(() => import("./components/Branches"));
+const Users = lazy(() => import("./components/Users"));
+
+
 
 function App() {
   return (
     <>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
+        <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
 
         <Route
           path="/kaizen/members"
@@ -85,6 +89,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </>
   );
 }
