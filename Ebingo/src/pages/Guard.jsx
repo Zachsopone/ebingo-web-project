@@ -42,12 +42,12 @@ const Guard = () => {
     setImageError(false);
   }, []);
 
-  // ⏱ Auto-clear after 4 seconds when showing member data
+  // ⏱ Auto-clear after seconds when showing member data
   useEffect(() => {
     if (status || validIdUrl) {
       const timer = setTimeout(() => {
         clearDisplay();
-      }, 4000);
+      }, 8000);
       return () => clearTimeout(timer);
     }
   }, [status, validIdUrl, clearDisplay]);
@@ -164,14 +164,14 @@ const Guard = () => {
   return (
     <main className="bg-[#F2F0EA] w-full h-screen flex flex-col">
       {/* Top bar */}
-      <div className="w-full h-[20%] flex justify-between items-center px-5 pt-5 pb-7 border-b border-gray-400 relative">
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center p-5 sm:pb-7 border-b border-gray-400 relative gap-4 sm:gap-0">
         {/* Scan form */}
         <form
           onSubmit={scanMode ? (e) => e.preventDefault() : handleSubmit}
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-2 sm:w-auto w-full"
         >
           <label className="text-lg">Scan RFID / ID / Name</label>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               type="text"
               value={rfid}
@@ -180,7 +180,7 @@ const Guard = () => {
               placeholder={
                 scanMode ? "Waiting for scan..." : "Enter Card no., ID, or Name"
               }
-              className="border border-black rounded-md p-2 bg-white w-[15.2rem]"
+              className="border border-black rounded-md p-2 bg-white w-full sm:w-[15rem]"
             />
 
             {/* Submit button for manual mode */}
@@ -192,7 +192,7 @@ const Guard = () => {
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -10, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                  className="bg-blue-500 hover:bg-blue-700 text-white rounded-md sm:items-start"
                 >
                   Submit
                 </motion.button>
@@ -201,7 +201,7 @@ const Guard = () => {
           </div>
 
           {/* Toggle scan/manual mode */}
-          <div className="flex items-center gap-3 mt-2 relative">
+          <div className="flex items-center gap-3 mt-2 relative sm:flex-row sm:gap-4 sm:mt-0">
             <span className="text-md">Scan Mode</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -218,7 +218,7 @@ const Guard = () => {
         </form>
 
         {/* Right side */}
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4 sm:mt-0 w-full sm:w-auto">
           <span className="text-md font-semibold mb-1">{dateTime.toLocaleString()}</span>
           <button
             onClick={handleLogout}
@@ -235,10 +235,10 @@ const Guard = () => {
       </div>
 
       {/* Main display */}
-      <div className="flex flex-1">
+      <div className="flex flex-col sm:flex-row flex-1 min-h-0">
         {/* Left: member info */}
         <div
-          className={`w-1/4 h-full border-r border-gray-400 flex flex-col items-center text-center transition-colors duration-500 ${
+          className={`w-full sm:w-1/4 h-40 items-center text-center border-b sm:border-r border-gray-400 flex flex-col transition-colors duration-500 sm:h-full pt-2 ${
             status === "valid"
               ? "bg-green-600"
               : status === "banned"
@@ -250,10 +250,10 @@ const Guard = () => {
         >
           {status === "valid" && member && (
             <>
-              <p className="text-white text-3xl font-bold uppercase pt-5">
+              <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-3 text-lg">
                 Welcome {member.lname}, {member.mname || ""} {member.fname} to Ebingo
               </p>
-              <div className="mt-4 text-white font-semibold text-xl space-y-1">
+              <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
                   ? branches.map((b) => <p key={b.id}>{b.sname}</p>)
                   : <p>No branch records found</p>}
@@ -263,10 +263,10 @@ const Guard = () => {
 
           {status === "banned" && member && (
             <>
-              <p className="text-white text-3xl font-bold uppercase pt-5">
+              <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
                 {member.lname}, {member.mname || ""} {member.fname} is BANNED
               </p>
-              <div className="mt-4 text-white font-semibold text-xl space-y-1">
+              <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
                   ? branches.map((b) => <p key={b.id}>{b.sname}</p>)
                   : <p>No branch records found</p>}
@@ -276,10 +276,10 @@ const Guard = () => {
 
           {status === "different_branch" && member && (
             <>
-              <p className="text-white text-3xl font-bold uppercase pt-5">
+              <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
                 {member.lname}, {member.mname || ""} {member.fname} is not registered from this branch
               </p>
-              <div className="mt-4 text-white font-semibold text-xl space-y-1">
+              <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
                   ? branches.map((b) => <p key={b.id}>{b.sname}</p>)
                   : <p>No branch records found</p>}
@@ -288,24 +288,23 @@ const Guard = () => {
           )}
 
           {status === "not_registered" && (
-            <h1 className="text-red-600 text-2xl font-bold uppercase pt-5">
+            <h1 className="text-red-600 sm:text-2xl text-lg font-bold uppercase pt-2 sm:pt-5">
               Not Registered
             </h1>
           )}
         </div>
 
         {/* Right: ID image */}
-        <div className="flex-1 flex items-center justify-center h-full">
+        <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
           {validIdUrl && !imageError ? (
             <img
               src={`${API_URL}${validIdUrl}`}
               alt="Valid ID"
-              className="object-contain"
-              style={{ height: "583px" }}
+              className="w-full h-full object-contain sm:max-h-full"
               onError={handleImageError}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full w-full">
               <p className="text-gray-600 text-lg">No Valid ID Available</p>
             </div>
           )}
