@@ -75,10 +75,10 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="w-full h-screen flex justify-center items-center bg-[#F2F0EA]">
+    <main className="w-full h-screen flex justify-center items-center bg-[#F2F0EA] px-4 sm:px-6 md:px-0">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col justify-evenly border border-black w-1/4 h-2/5 rounded-xl bg-[#A8D5E3]"
+        className="flex flex-col justify-evenly border border-black lg:w-1/4 lg:h-2/5 rounded-xl bg-[#A8D5E3] w-full max-w-md sm:max-w-sm md:max-w-lg"
       >
         <label className="mx-4">Username</label>
         <input
