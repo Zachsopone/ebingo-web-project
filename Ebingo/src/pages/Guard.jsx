@@ -162,7 +162,7 @@ const Guard = () => {
   };
 
   return (
-    <main className="bg-[#F2F0EA] w-full h-screen flex flex-col">
+    <main className="bg-[#F2F0EA] w-full h-screen flex flex-col overflow-hidden">
       {/* Top bar */}
       <div className="w-full flex flex-col sm:flex-row justify-between items-center p-5 sm:pb-7 border-b border-gray-400 relative gap-4 sm:gap-0">
         {/* Scan form */}
@@ -192,7 +192,7 @@ const Guard = () => {
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -10, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-blue-500 hover:bg-blue-700 text-white rounded-md sm:items-start"
+                  className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md sm:items-start"
                 >
                   Submit
                 </motion.button>
