@@ -180,6 +180,23 @@ const Members = ({ fixedBranchId, refetchKey }) => {
     }
   };
 
+  const ROWS_PER_PAGE = 20;
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(filteredUsers.length / ROWS_PER_PAGE);
+
+  const indexOfLastRow = currentPage * ROWS_PER_PAGE;
+  const indexOfFirstRow = indexOfLastRow - ROWS_PER_PAGE;
+
+  const currentRows = filteredUsers.slice(indexOfFirstRow, indexOfLastRow);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   return (
     <div className="w-full h-auto flex justify-center items-center">
       <div className="h-auto w-full">
