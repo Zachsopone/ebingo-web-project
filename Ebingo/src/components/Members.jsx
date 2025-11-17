@@ -256,7 +256,7 @@ const Members = ({ fixedBranchId, refetchKey }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
+            {currentRows.map((user) => (
               <MembersCard
                 key={user.id}
                 user={user}
