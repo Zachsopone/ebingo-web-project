@@ -43,8 +43,10 @@ export const downloadVisitsByDateRange = async (req, res) => {
 
     const [rows] = await db.query(query, params);
 
-    if (!rows.length) {
-      return res.status(404).json({ error: "No visits found in the selected range" });
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({
+        message: "No visits found in the selected range"
+      });
     }
 
     // Convert to worksheet
