@@ -524,7 +524,14 @@ const Navigation = ({ onBranchAdded, triggerRefetch, onUserAdded }) => {
                   );
 
                   if (!response.ok) {
-                    throw new Error("Failed to download visits");
+                      const errorData = await response.json();
+
+                      if (response.status === 404 && errorData.message === "No visits found in the selected range") {
+                          enqueueSnackbar("No visits found in the selected range", { variant: "info" });
+                          return;
+                      }
+
+                      throw new Error("Failed to download visits");
                   }
 
                   const blob = await response.blob();
