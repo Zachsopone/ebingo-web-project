@@ -45,7 +45,7 @@ export const downloadPlayersByDateRange = async (req, res) => {
 
     if (!rows || rows.length === 0) {
       return res.status(404).json({
-        message: "No New Players found in the selected range"
+        message: "No new players found in the selected range"
       });
     }
 
