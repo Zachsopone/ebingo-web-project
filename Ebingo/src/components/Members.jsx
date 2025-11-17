@@ -269,6 +269,53 @@ const Members = ({ fixedBranchId, refetchKey }) => {
             ))}
           </tbody>
         </table>
+
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm">
+            Showing <span className="font-semibold">{indexOfFirstRow + 1}</span>–
+            <span className="font-semibold">
+              {Math.min(indexOfLastRow, filteredUsers.length)}
+            </span>{" "}
+            of <span className="font-semibold">{filteredUsers.length}</span> members
+          </p>
+
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <button
+              className="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Prev
+            </button>
+
+            {/* Page Numbers */}
+            {[...Array(totalPages)].map((_, index) => {
+              const page = index + 1;
+              return (
+                <button
+                  key={page}
+                  className={`px-3 py-1 border rounded-md ${
+                    currentPage === page ? "bg-blue-600 text-white" : "hover:bg-gray-100"
+                  }`}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </button>
+              );
+            })}
+
+            {/* Next Button */}
+            <button
+              className="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
         <footer className="w-full mt-12 bg-[#6CBFD6] text-white text-center py-3">
           <p>© {new Date().getFullYear()} Ebingo. All Rights Reserved.</p>
         </footer>
