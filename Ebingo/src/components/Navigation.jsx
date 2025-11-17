@@ -527,7 +527,7 @@ const Navigation = ({ onBranchAdded, triggerRefetch, onUserAdded }) => {
                       const errorData = await response.json();
 
                       if (response.status === 404 && errorData.message === "No visits found in the selected range") {
-                          enqueueSnackbar("No visits found in the selected range", { variant: "info" });
+                          enqueueSnackbar("No visits found in the selected range", { variant: "warning" });
                           return;
                       }
 
@@ -626,7 +626,14 @@ const Navigation = ({ onBranchAdded, triggerRefetch, onUserAdded }) => {
                   );
 
                   if (!response.ok) {
-                    throw new Error("Failed to download new players");
+                      const errorData = await response.json();
+
+                      if (response.status === 404 && errorData.message === "No new players found in the selected range") {
+                          enqueueSnackbar("No new players found in the selected range", { variant: "warning" });
+                          return;
+                      }
+
+                      throw new Error("Failed to download new players");
                   }
 
                   const blob = await response.blob();
