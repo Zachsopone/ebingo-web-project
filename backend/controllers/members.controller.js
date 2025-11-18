@@ -28,8 +28,8 @@ const addMember = async (req, res) => {
       filename,
       filename2,
       idnum,
-      path,
-      path2,
+      profilePath,
+      validPath,
       risk_assessment,
     } = req.body;
 
@@ -56,8 +56,8 @@ const addMember = async (req, res) => {
       filename,
       filename2,
       idnum,
-      path,
-      path2,
+      profilePath,
+      validPath,
       risk_assessment,
     };
     const missingFields = Object.keys(requiredFields).filter(
@@ -113,8 +113,8 @@ const addMember = async (req, res) => {
       filename,
       filename2,
       idnum,
-      path,
-      path2,
+      profilePath,
+      validPath,
       risk_assessment,
       created_date,
       created_time,
@@ -142,8 +142,8 @@ const addMember = async (req, res) => {
       filename,
       filename2,
       idnum,
-      path,
-      path2,
+      profilePath,
+      validPath,
       risk_assessment,
       created_date,
       created_time,
