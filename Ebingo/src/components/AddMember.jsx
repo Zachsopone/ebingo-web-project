@@ -137,9 +137,9 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
         ...values,
         branch_id: selectedOption,
         filename: uploadResponse.data.profile.filename,
-        path: uploadResponse.data.profile.path,
+        profilePath: uploadResponse.data.profile.path,
         filename2: uploadResponse.data.valid.filename,
-        path2: uploadResponse.data.valid.path,
+        validPath: uploadResponse.data.valid.path,      
       };
 
       
