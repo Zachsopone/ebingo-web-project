@@ -101,7 +101,7 @@ const LoginPage = () => {
           className="outline-none border mx-4 p-2 border-black rounded-md bg-transparent"
         />
 
-        <div className="flex items-center gap-2 mt-1 ml-4 bg-[#A8D5E3]">
+        <div className="flex items-center gap-2 mt-1 ml-4">
           <input
             type="checkbox"
             id="showPass"
