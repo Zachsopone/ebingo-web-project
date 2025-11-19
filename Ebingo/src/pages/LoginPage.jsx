@@ -13,6 +13,7 @@ const LoginPage = () => {
     Password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -92,13 +93,26 @@ const LoginPage = () => {
 
         <label className="mx-4">Password</label>
         <input
-          type="password"
+          type={showPassword ? "text" : "password"}
           required
           autoComplete="current-password"
           value={values.Password}
           onChange={(e) => setValues({ ...values, Password: e.target.value })}
           className="outline-none border mx-4 p-2 border-black rounded-md bg-transparent"
         />
+
+        <div className="flex items-center gap-2 mt-2 ml-4">
+          <input
+            type="checkbox"
+            id="showPass"
+            checked={showPassword}
+            onChange={() => setShowPassword(!showPassword)}
+            className="cursor-pointer"
+          />
+          <label htmlFor="showPass" className="cursor-pointer select-none text-sm">
+            Show Password
+          </label>
+        </div>
 
         <button
           type="submit"
