@@ -18,7 +18,7 @@ const rfid = async (req, res) => {
       // Try Card_No first; if not found, try idnum
       const [cardRows] = await db.execute(
         `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-                m.filename1, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+                m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
          FROM members m
          WHERE m.Card_No = ?
          ORDER BY m.created_date ASC, m.created_time ASC
@@ -31,7 +31,7 @@ const rfid = async (req, res) => {
       } else {
         const [idRows] = await db.execute(
           `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-                  m.filename1, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
            FROM members m
            WHERE m.idnum = ?
            ORDER BY m.created_date ASC, m.created_time ASC
@@ -49,7 +49,7 @@ const rfid = async (req, res) => {
       if (nameParts.length === 3) {
         query = `
           SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-                 m.filename1, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (
             LOWER(m.fname) = ? AND LOWER(m.mname) = ? AND LOWER(m.lname) = ?
@@ -63,7 +63,7 @@ const rfid = async (req, res) => {
       } else if (nameParts.length === 2) {
         query = `
           SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-                 m.filename1, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (
             LOWER(m.fname) = ? AND LOWER(m.lname) = ?
@@ -87,7 +87,7 @@ const rfid = async (req, res) => {
     }
 
     const member = memberRows[0];
-    const profileIdUrl = member.filename1 ? `/upload/${member.filename1}` : null;
+    const profileIdUrl = member.filename ? `/upload/${member.filename}` : null;
 
     // Fetch branch history
     const [branchRows] = await db.execute(
