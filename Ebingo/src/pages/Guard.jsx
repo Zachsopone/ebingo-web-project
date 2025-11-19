@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 const Guard = () => {
   const [member, setMember] = useState(null);
   const [branches, setBranches] = useState([]);
-  const [validIdUrl, setValidIdUrl] = useState(null);
+  const [profileIdUrl, setProfileIdUrl] = useState(null);
   const [rfid, setRfid] = useState("");
   const [scanMode, setScanMode] = useState(true);
   const [status, setStatus] = useState("");
@@ -38,19 +38,19 @@ const Guard = () => {
     setStatus("");
     setMember(null);
     setBranches([]);
-    setValidIdUrl(null);
+    setProfileIdUrl(null);
     setImageError(false);
   }, []);
 
   // ⏱ Auto-clear after seconds when showing member data
   useEffect(() => {
-    if (status || validIdUrl) {
+    if (status || profileIdUrl) {
       const timer = setTimeout(() => {
         clearDisplay();
       }, 8000);
       return () => clearTimeout(timer);
     }
-  }, [status, validIdUrl, clearDisplay]);
+  }, [status, profileIdUrl, clearDisplay]);
 
   // 🖱 Instant clear when user clicks or presses any key — but not while typing manually
   useEffect(() => {
@@ -61,7 +61,7 @@ const Guard = () => {
         event.target.tagName === "TEXTAREA" ||
         event.target.isContentEditable;
 
-      if ((member || validIdUrl || status) && (!isInput || scanMode)) {
+      if ((member || profileIdUrl || status) && (!isInput || scanMode)) {
         clearDisplay();
       }
     };
@@ -73,7 +73,7 @@ const Guard = () => {
         event.target.tagName === "TEXTAREA" ||
         event.target.isContentEditable;
 
-      if ((member || validIdUrl || status) && (!isInput || scanMode)) {
+      if ((member || profileIdUrl || status) && (!isInput || scanMode)) {
         clearDisplay();
       }
     };
@@ -85,7 +85,7 @@ const Guard = () => {
       window.removeEventListener("click", handleClick);
       window.removeEventListener("keydown", handleKey);
     };
-  }, [member, validIdUrl, status, clearDisplay, scanMode]);
+  }, [member, profileIdUrl, status, clearDisplay, scanMode]);
 
   // 📤 Handle RFID submit
   const handleRFIDSubmit = useCallback(async (cardNumber) => {
@@ -95,12 +95,12 @@ const Guard = () => {
         rfid: cardNumber,
         guardBranchId,
       });
-      const { data: memberData, branches, validIdUrl } = res.data;
+      const { data: memberData, branches, profileIdUrl } = res.data;
 
       if (memberData) {
         setMember(memberData);
         setBranches(branches);
-        setValidIdUrl(validIdUrl);
+        setProfileIdUrl(profileIdUrl);
         setImageError(false);
 
         if (!memberData.sameBranch) setStatus("different_branch");
@@ -115,7 +115,7 @@ const Guard = () => {
       setStatus("not_registered");
       setMember(null);
       setBranches([]);
-      setValidIdUrl(null);
+      setProfileIdUrl(null);
       setImageError(false);
       setRfid("");
     }
@@ -296,9 +296,9 @@ const Guard = () => {
 
         {/* Right: ID image */}
         <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
-          {validIdUrl && !imageError ? (
+          {profileIdUrl && !imageError ? (
             <img
-              src={`${API_URL}${validIdUrl}`}
+              src={`${API_URL}${profileIdUrl}`}
               alt="Valid ID"
               className="w-full h-full object-contain sm:max-h-full"
               onError={handleImageError}
