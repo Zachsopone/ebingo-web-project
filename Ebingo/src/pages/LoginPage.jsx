@@ -49,18 +49,23 @@ const LoginPage = () => {
 
       const role = (payload.role || "").toLowerCase();
 
-      // If cashier, ensure backend provided a branch_id in the token
-      if (role === "cashier" && !payload.branch_id) {
-        enqueueSnackbar("Cashier must be assigned to a branch.", { variant: "warning" });
-        setLoading(false);
-        return;
-      }
-
-      // Route by role (guard has no /members page)
-      if (role === "guard") {
-        navigate("/guard");
-      } else {
-        navigate(`/${role}/members`);
+      // Route by role
+      switch (role) {
+        case "cashier":
+          navigate("/cashier/members");
+          break;
+        case "guard":
+          navigate("/guard");
+          break;
+        case "kaizen":
+          navigate("/kaizen/members");
+          break;
+        case "superadmin":
+          navigate("/superadmin/members");
+          break;
+        default:
+          enqueueSnackbar("Unknown role", { variant: "error" });
+          break;
       }
     
     } catch (err) {
