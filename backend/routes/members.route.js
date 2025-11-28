@@ -14,7 +14,7 @@ router.post("/add", addMember);
 router.put("/:id", editMember);
 router.delete("/:id", deleteMember);
 
-// 🔹 New route for profile
+// New route for profile
 router.get("/:id", getMemberById);
 
 export default router;
