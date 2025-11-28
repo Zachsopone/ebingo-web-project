@@ -15,13 +15,13 @@ const Guard = () => {
   const [dateTime, setDateTime] = useState(new Date());
   const [imageError, setImageError] = useState(false);
 
-  // 🕓 Keep live date & time
+  // Keep live date & time
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 🔐 Extract guard branch ID from token
+  // Extract guard branch ID from token
   const getGuardBranchId = () => {
     const token = Cookies.get("accessToken");
     if (!token) return null;
@@ -33,7 +33,7 @@ const Guard = () => {
     }
   };
 
-  // 🧹 Clear displayed data
+  // Clear displayed data
   const clearDisplay = useCallback(() => {
     setStatus("");
     setMember(null);
@@ -42,7 +42,7 @@ const Guard = () => {
     setImageError(false);
   }, []);
 
-  // ⏱ Auto-clear after seconds when showing member data
+  // Auto-clear after seconds when showing member data
   useEffect(() => {
     if (status || profileIdUrl) {
       const timer = setTimeout(() => {
@@ -52,7 +52,7 @@ const Guard = () => {
     }
   }, [status, profileIdUrl, clearDisplay]);
 
-  // 🖱 Instant clear when user clicks or presses any key — but not while typing manually
+  // Instant clear when user clicks or presses any key — but not while typing manually
   useEffect(() => {
     const handleClick = (event) => {
       // Don't clear if typing inside input during manual mode
@@ -87,7 +87,7 @@ const Guard = () => {
     };
   }, [member, profileIdUrl, status, clearDisplay, scanMode]);
 
-  // 📤 Handle RFID submit
+  // Handle RFID submit
   const handleRFIDSubmit = useCallback(async (cardNumber) => {
     try {
       const guardBranchId = getGuardBranchId();
@@ -121,7 +121,7 @@ const Guard = () => {
     }
   }, []);
 
-  // ⏱ Auto-submit scanned input after 0.5s
+  // Auto-submit scanned input after 0.5s
   useEffect(() => {
     if (scanMode && rfid) {
       const timeout = setTimeout(() => handleRFIDSubmit(rfid), 500);
@@ -129,7 +129,7 @@ const Guard = () => {
     }
   }, [rfid, scanMode, handleRFIDSubmit]);
 
-  // 🗃 Save scanned log
+  // Save scanned log
   // const saveMemberData = (fullName, cardNumber) => {
   //   const timestamp = new Date().toLocaleString();
   //   axios
@@ -141,16 +141,16 @@ const Guard = () => {
   //     .catch(() => {});
   // };
 
-  // 🧭 Manual submit
+  // Manual submit
   const handleSubmit = (e) => {
     e.preventDefault();
     if (rfid) handleRFIDSubmit(rfid);
   };
 
-  // 🖼 Handle image load error
+  // Handle image load error
   const handleImageError = () => setImageError(true);
 
-  // 🚪 Logout
+  // Logout
   const handleLogout = () => {
     axios
       .post(`${API_URL}/auth/logout`)
