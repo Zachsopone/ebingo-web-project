@@ -3,7 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import ClosedPage from "./pages/ClosedPage";
+// import ClosedPage from "./pages/ClosedPage";
 
 const Kaizen = lazy(() => import("./pages/Kaizen"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
@@ -21,7 +21,7 @@ function App() {
         <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/closed" element={<ClosedPage />} />
+          {/* <Route path="/closed" element={<ClosedPage />} /> */}
 
         <Route
           path="/kaizen/members"
