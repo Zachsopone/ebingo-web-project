@@ -40,27 +40,33 @@ const formatDateTimeDisplay = (mysqlDatetime) => {
 
 // Convert MySQL / ISO DATETIME -> parts for initializing the custom picker
 const mysqlToParts = (mysqlDatetime) => {
-  let d;
   if (!mysqlDatetime) {
-    d = new Date();
-  } else {
-    d = new Date(mysqlDatetime);
-    if (isNaN(d.getTime())) d = new Date();
+    const now = new Date();
+    return {
+      date: now.toISOString().slice(0, 10),
+      hour: String((now.getHours() % 12) || 12).padStart(2, "0"),
+      minute: String(now.getMinutes()).padStart(2, "0"),
+      ampm: now.getHours() >= 12 ? "PM" : "AM",
+    };
   }
 
-  // Use local year, month, day for date input
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0"); // Months 0-11
-  const day = String(d.getDate()).padStart(2, "0");
+  // Handle ISO or MySQL ("YYYY-MM-DDTHH:MM:SSZ" or "YYYY-MM-DD HH:MM:SS")
+  let iso = mysqlDatetime.replace(" ", "T");
+  if (!iso.endsWith("Z")) iso += "Z"; // Force UTC
 
-  let hr = d.getHours();
-  const ampm = hr >= 12 ? "PM" : "AM";
-  hr = hr % 12 || 12;
+  const [datePart, timePart] = iso.split("T");
+  const [hourStr, minuteStr] = timePart.split(":");
+
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr;
+
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
 
   return {
-    date: `${y}-${m}-${day}`, // Local date for date input
-    hour: String(hr).padStart(2, "0"),
-    minute: String(d.getMinutes()).padStart(2, "0"),
+    date: datePart,
+    hour: String(hour).padStart(2, "0"),
+    minute: String(minute).padStart(2, "0"),
     ampm,
   };
 };
