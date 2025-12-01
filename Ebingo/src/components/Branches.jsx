@@ -7,68 +7,78 @@ import Cookies from "js-cookie";
 import { MdOutlineEdit, MdSave, MdCancel, MdDeleteOutline, MdMoreTime } from "react-icons/md";
 import { useSnackbar } from "notistack";
 
-// Convert "22:00:00" → "10:00 PM"
-const formatTo12Hour = (timeStr) => {
-  if (!timeStr) return "";
-  
-  // Accept timeStr like "HH:MM:SS" or "YYYY-MM-DD HH:MM:SS"
-  const t = timeStr.includes(" ") ? timeStr.split(" ")[1] : timeStr;
-  const [hourStr, minute] = t.split(":");
-  let hour = parseInt(hourStr, 10);
-  const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12; // 0→12, 13→1
-  return `${hour.toString().padStart(2, "0")}:${minute} ${ampm}`;
-};
+const parseBackendDatetimeUTC = (mysqlDatetime) => {
+  if (!mysqlDatetime) return null;
+  let s = mysqlDatetime.replace(" ", "T");
 
-// Format DATETIME for display: "Jan 1, 2025 • 02:05 AM"
-const formatDateTimeDisplay = (mysqlDatetime) => {
-  if (!mysqlDatetime) return "";
-  const d = new Date(mysqlDatetime);
-  if (isNaN(d.getTime())) return "";
-  const datePart = d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const [hour, minute] = [
-    String(d.getHours()).padStart(2, "0"),
-    String(d.getMinutes()).padStart(2, "0"),
-  ];
-  const time12 = formatTo12Hour(`${hour}:${minute}:00`);
-  return `${datePart} • ${time12}`;
-};
+  const match = s.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/
+  );
 
-// Convert MySQL / ISO DATETIME -> parts for initializing the custom picker
-const mysqlToParts = (mysqlDatetime) => {
-  if (!mysqlDatetime) {
-    const now = new Date();
-    return {
-      date: now.toISOString().slice(0, 10),
-      hour: String((now.getHours() % 12) || 12).padStart(2, "0"),
-      minute: String(now.getMinutes()).padStart(2, "0"),
-      ampm: now.getHours() >= 12 ? "PM" : "AM",
-    };
-  }
+  if (!match) return null;
 
-  // Handle ISO or MySQL ("YYYY-MM-DDTHH:MM:SSZ" or "YYYY-MM-DD HH:MM:SS")
-  let iso = mysqlDatetime.replace(" ", "T");
-  if (!iso.endsWith("Z")) iso += "Z"; // Force UTC
-
-  const [datePart, timePart] = iso.split("T");
-  const [hourStr, minuteStr] = timePart.split(":");
-
-  let hour = parseInt(hourStr, 10);
-  const minute = minuteStr;
-
-  const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12;
+  const [, yy, mm, dd, hh, min] = match;
 
   return {
-    date: datePart,
-    hour: String(hour).padStart(2, "0"),
+    year: Number(yy),
+    month: Number(mm),
+    day: Number(dd),
+    hour: Number(hh),
+    minute: Number(min),
+  };
+};
+
+// Convert 24h → 12h
+const to12HourParts = (hour24, minute) => {
+  const ampm = hour24 >= 12 ? "PM" : "AM";
+  const h12 = hour24 % 12 || 12;
+  return {
+    hour: String(h12).padStart(2, "0"),
     minute: String(minute).padStart(2, "0"),
     ampm,
   };
+};
+
+// FIXED READ-ONLY DISPLAY
+const formatDateTimeDisplay = (mysqlDatetime) => {
+  if (!mysqlDatetime) return "";
+
+  const p = parseBackendDatetimeUTC(mysqlDatetime);
+  if (!p) return "";
+
+  // Build pure UTC date for formatting only date portion
+  const utcDate = new Date(Date.UTC(p.year, p.month - 1, p.day));
+
+  const dateStr = utcDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
+
+  return `${dateStr} • ${hour}:${minute} ${ampm}`;
+};
+
+// FIXED DROPDOWN PRE-SELECT
+const mysqlToParts = (mysqlDatetime) => {
+  if (!mysqlDatetime) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const { hour, minute, ampm } = to12HourParts(now.getHours(), now.getMinutes());
+    return { date: `${y}-${m}-${d}`, hour, minute, ampm };
+  }
+
+  const p = parseBackendDatetimeUTC(mysqlDatetime);
+  if (!p) return mysqlToParts(null);
+
+  const date = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
+
+  return { date, hour, minute, ampm };
 };
 
 
@@ -77,9 +87,12 @@ const partsToMySQL = (dateStr, hourStr, minuteStr, ampm) => {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-").map(Number);
   let hour = parseInt(hourStr, 10);
+
   if (ampm === "PM" && hour !== 12) hour += 12;
   if (ampm === "AM" && hour === 12) hour = 0;
+
   const dt = new Date(y, m - 1, d, hour, parseInt(minuteStr, 10), 0);
+
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:00`;
 };
 
