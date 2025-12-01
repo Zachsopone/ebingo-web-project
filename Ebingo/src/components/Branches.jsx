@@ -394,7 +394,7 @@ const Branches = () => {
                           {isEditing ? (
                               <input
                                   value={editedBranch.branchemail || ""}
-                                  onChange={(e) => handleChange("email", e.target.value)}
+                                  onChange={(e) => handleChange("branchemail", e.target.value)}
                                   className="w-full border rounded px-1"
                               />
                           ) : branch.branchemail}
