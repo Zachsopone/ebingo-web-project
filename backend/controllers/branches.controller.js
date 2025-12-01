@@ -8,9 +8,7 @@ export const getBranches = async (_, res) => {
          id,
          sname,
          address,
-         cperson,
-         contact,
-         position,
+         branchemail,
          opening_time AS open_time,
          closing_time AS close_time
        FROM branches
@@ -25,12 +23,18 @@ export const getBranches = async (_, res) => {
 
 export const updateBranch = async (req, res) => {
   const { id } = req.params;
-  const { sname, address, cperson, contact, position } = req.body;
+  const { sname, address, branchemail } = req.body;
 
   try {
+    const isValidEmail = (email) => typeof email === "string" && /\S+@\S+\.\S+/.test(email);
+
+    if (branchemail && !isValidEmail(branchemail)) {
+      return res.status(400).json({ error: "Invalid Branch email address format." });
+    }
+
     const [result] = await db.execute(
-      "UPDATE branches SET sname = ?, address = ?, cperson = ?, contact = ?, position = ? WHERE id = ?",
-      [sname, address, cperson, contact, position, id]
+      "UPDATE branches SET sname = ?, address = ?, branchemail = ? WHERE id = ?",
+      [sname, address, branchemail, id]
     );
 
     if (result.affectedRows === 0) {
@@ -68,12 +72,14 @@ export const updateBranchTime = async (req, res) => {
   }
 };
 
+const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+
 const addBranch = async (req, res) => {
   try {
-    const { sname, address, cperson, contact, position } = req.body;
+    const { sname, address, branchemail } = req.body;
 
     // Validate required fields
-    const requiredFields = { sname, address, cperson, contact, position };
+    const requiredFields = { sname, address, branchemail };
     const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
 
     if (missingFields.length > 0) {
@@ -82,10 +88,14 @@ const addBranch = async (req, res) => {
       });
     }
 
+    if (!isValidEmail(branchemail)) {
+      return res.status(400).json({ error: "Branch email must be a valid email address." });
+    }
+
     // Check for duplicates
     const [existingSname] = await db.execute("SELECT id FROM branches WHERE sname = ?", [sname]);
     const [existingAddress] = await db.execute("SELECT id FROM branches WHERE address = ?", [address]);
-    const [existingContact] = await db.execute("SELECT id FROM branches WHERE contact = ?", [contact]);
+    const [existingContact] = await db.execute("SELECT id FROM branches WHERE branchemail = ?", [branchemail]);
 
     if (existingSname.length > 0) {
       return res.status(400).json({ error: "Branch name already exists." });
@@ -94,23 +104,21 @@ const addBranch = async (req, res) => {
       return res.status(400).json({ error: "Branch address already exists." });
     }
     if (existingContact.length > 0) {
-      return res.status(400).json({ error: "Branch contact already exists." });
+      return res.status(400).json({ error: "Branch email already exists." });
     }
 
     //Insert the branch
     const [result] = await db.execute(
-      `INSERT INTO branches (sname, address, cperson, contact, position)
-       VALUES (?, ?, ?, ?, ?)`,
-      [sname, address, cperson, contact, position]
+      `INSERT INTO branches (sname, address, branchemail)
+       VALUES (?, ?, ?)`,
+      [sname, address, branchemail]
     );
 
     const newBranch = {
       id: result.insertId,
       sname,
       address,
-      cperson,
-      contact,
-      position,
+      branchemail,
     };
 
     //Return the newly added branch with ID
