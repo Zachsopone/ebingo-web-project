@@ -249,11 +249,16 @@ const Branches = () => {
       updated[editIndex] = { ...updated[editIndex], ...editedBranch };
       setBranches(updated);
       setEditIndex(null);
+
       setEditedBranch({});
       enqueueSnackbar("Branch updated successfully.", { variant: "success" });
     } catch (err) {
       console.error(err);
-      enqueueSnackbar("Failed to update branch.", { variant: "error" });
+      if (err.response && err.response.data && err.response.data.error) {
+        enqueueSnackbar(err.response.data.error, { variant: "error" });
+      } else {
+        enqueueSnackbar("Failed to update branch.", { variant: "error" });
+      }
     } finally {
       setDtDropdown({ open: false, field: null, index: null, anchorRect: null });
     }
@@ -270,7 +275,11 @@ const Branches = () => {
       enqueueSnackbar("Branch deleted successfully.", { variant: "success" });
     } catch (err) {
       console.error("Delete error:", err);
-      enqueueSnackbar("Failed to delete branch.", { variant: "error" });
+      if (err.response && err.response.data && err.response.data.error) {
+        enqueueSnackbar(err.response.data.error, { variant: "error" });
+      } else {
+        enqueueSnackbar("Failed to delete branch.", { variant: "error" });
+      }
     } finally {
       setDeleteModalOpen(false);
       setBranchToDelete(null);
@@ -346,11 +355,9 @@ const Branches = () => {
           <thead>
             <tr>
               <th className="border border-black p-2">ID</th>
-              <th className="border border-black p-2">Branch Name</th>
+              <th className="border border-black p-2">Venue Name</th>
               <th className="border border-black p-2">Address</th>
-              <th className="border border-black p-2">Contact Person</th>
-              <th className="border border-black p-2">Contact Number</th>
-              <th className="border border-black p-2">Position</th>
+              <th className="border border-black p-2">Venue Email Address</th>
               <th className="border border-black p-2">Opening Time</th>
               <th className="border border-black p-2">Closing Time</th>
               <th className="border border-black p-2">Actions</th>
@@ -386,31 +393,11 @@ const Branches = () => {
                       <td className="border border-black p-1">
                           {isEditing ? (
                               <input
-                                  value={editedBranch.cperson || ""}
-                                  onChange={(e) => handleChange("cperson", e.target.value)}
+                                  value={editedBranch.branchemail || ""}
+                                  onChange={(e) => handleChange("email", e.target.value)}
                                   className="w-full border rounded px-1"
                               />
-                          ) : branch.cperson}
-                      </td>
-
-                      <td className="border border-black p-1">
-                          {isEditing ? (
-                              <input
-                                  value={editedBranch.contact || ""}
-                                  onChange={(e) => handleChange("contact", e.target.value)}
-                                  className="w-full border rounded px-1"
-                              />
-                          ) : branch.contact}
-                      </td>
-
-                      <td className="border border-black p-1">
-                          {isEditing ? (
-                              <input
-                                  value={editedBranch.position || ""}
-                                  onChange={(e) => handleChange("position", e.target.value)}
-                                  className="w-full border rounded px-1"
-                              />
-                          ) : branch.position}
+                          ) : branch.branchemail}
                       </td>
 
                       {/* OPENING TIME */}
