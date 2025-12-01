@@ -190,6 +190,8 @@ DateTimeDropdown.defaultProps = {
   initialDatetime: "",
 };
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Branches = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [branches, setBranches] = useState([]);
@@ -206,7 +208,7 @@ const Branches = () => {
 
   const fetchBranches = () => {
     axios
-      .get("http://localhost:3000/branches")
+      .get(`${API_URL}/branches`)
       .then((res) => setBranches(res.data))
       .catch((err) => {
         console.error(err);
@@ -223,7 +225,7 @@ const Branches = () => {
   const handleSave = async () => {
     try {
       const { id, ...updatedData } = editedBranch;
-      await axios.put(`http://localhost:3000/branches/${id}`, updatedData);
+      await axios.put(`${API_URL}/branches/${id}`, updatedData);
       const updated = [...branches];
       updated[editIndex] = { ...updated[editIndex], ...editedBranch };
       setBranches(updated);
@@ -244,7 +246,7 @@ const Branches = () => {
     if (!branchToDelete) return;
     const { branch, index } = branchToDelete;
     try {
-      await axios.delete(`http://localhost:3000/branches/${branch.id}`);
+      await axios.delete(`${API_URL}/branches/${branch.id}`);
       setBranches(branches.filter((_, i) => i !== index));
       enqueueSnackbar("Branch deleted successfully.", { variant: "success" });
     } catch (err) {
@@ -265,7 +267,7 @@ const Branches = () => {
 
   const handleLogout = () => {
     axios
-      .post("http://localhost:3000/auth/logout")
+      .post(`${API_URL}/auth/logout`)
       .then(() => {
         Cookies.remove("accessToken");
         window.location.href = "/";
@@ -427,7 +429,7 @@ const Branches = () => {
 
                                   try {
                                     // Send times to backend route /branches/:id/time
-                                    await axios.put(`http://localhost:3000/branches/${b.id}/time`, {
+                                    await axios.put(`${API_URL}/branches/${b.id}/time`, {
                                       open_time: b.open_time,
                                       close_time: b.close_time,
                                     });
