@@ -1,9 +1,6 @@
-// import reactLogo from "./assets/react.svg";
-// import viteLogo from "/vite.svg";
 import { lazy, Suspense } from 'react';
 import { Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-// import ClosedPage from "./pages/ClosedPage";
 
 const Kaizen = lazy(() => import("./pages/Kaizen"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
@@ -12,7 +9,7 @@ const Guard = lazy(() => import("./pages/Guard"));
 const ProtectedRoute = lazy(() => import("./route/ProtectedRoute"));
 const Branches = lazy(() => import("./components/Branches"));
 const Users = lazy(() => import("./components/Users"));
-
+const ClosedPage = lazy(() => import("./pages/ClosedPage"));
 
 
 function App() {
@@ -21,7 +18,7 @@ function App() {
         <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          {/* <Route path="/closed" element={<ClosedPage />} /> */}
+          <Route path="/closed" element={<ClosedPage />} />
 
         <Route
           path="/kaizen/members"
@@ -42,7 +39,7 @@ function App() {
         <Route
           path="/cashier/members"
           element={
-            <ProtectedRoute allowedRoles={["cashier"]} allowClosed={false}>
+            <ProtectedRoute allowedRoles={["cashier"]}>
               <Cashier />
             </ProtectedRoute>
           }
@@ -51,7 +48,7 @@ function App() {
           path="/guard"
           element={
             <ProtectedRoute
-              allowedRoles={["guard"]} allowClosed={false}>
+              allowedRoles={["guard"]}>
               <Guard />
             </ProtectedRoute>
           }
