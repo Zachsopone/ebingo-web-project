@@ -48,14 +48,15 @@ const LoginPage = () => {
       }
 
       const role = (payload.role || "").toLowerCase();
+      const branchId = payload.branch_id;
 
       // Route by role
       switch (role) {
         case "cashier":
-          navigate("/cashier/members");
+          navigate("/cashier/members", { state: { branchId } });
           break;
         case "guard":
-          navigate("/guard");
+          navigate("/guard", { state: { branchId } });
           break;
         case "kaizen":
           navigate("/kaizen/members");
