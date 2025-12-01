@@ -9,9 +9,7 @@ const AddBranch = ({ setPopupType, onBranchAdded }) => {
   const [values, setValues] = useState({
     sname: "",
     address: "",
-    cperson: "",
-    contact: "",
-    position: "",
+    branchemail: "",
   });
 
   const { enqueueSnackbar } = useSnackbar();
@@ -19,7 +17,7 @@ const AddBranch = ({ setPopupType, onBranchAdded }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const requiredFields = ["sname", "address", "cperson", "contact", "position"];
+    const requiredFields = ["sname", "address", "branchemail"];
     const missingFields = requiredFields.filter((field) => !values[field]);
 
     if (missingFields.length > 0) {
@@ -92,37 +90,13 @@ const AddBranch = ({ setPopupType, onBranchAdded }) => {
           </div>
 
           <div>
-            <label className="block mb-1">Contact Person</label>
+            <label className="block mb-1">Branch Email</label>
             <input
-              type="text"
-              placeholder="Full Name"
+              type="email"
+              placeholder="Branch Email Address"
               required
-              value={values.cperson}
-              onChange={(e) => setValues({ ...values, cperson: e.target.value })}
-              className="w-full p-2 border border-black rounded-md outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1">Contact Number</label>
-            <input
-              type="number"
-              placeholder="Mobile Number"
-              required
-              value={values.contact}
-              onChange={(e) => setValues({ ...values, contact: e.target.value })}
-              className="w-full p-2 border border-black rounded-md outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1">Position</label>
-            <input
-              type="text"
-              placeholder="Job Position"
-              required
-              value={values.position}
-              onChange={(e) => setValues({ ...values, position: e.target.value })}
+              value={values.branchemail}
+              onChange={(e) => setValues({ ...values, branchemail: e.target.value })}
               className="w-full p-2 border border-black rounded-md outline-none"
             />
           </div>
