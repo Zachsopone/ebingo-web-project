@@ -1,48 +1,75 @@
-import { Navigate } from "react-router-dom";
+import { Navigate} from "react-router-dom";
 import Cookies from "js-cookie";
 import PropTypes from "prop-types";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-// allowClosed = true
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  //console.log("Cookies after login:", Cookies.get());
   const token = Cookies.get("accessToken");
-  if (!token) return <Navigate to="/" replace />;
+  const [isOpen, setIsOpen] = useState(true); // assume open by default
+  const [loading, setLoading] = useState(true);
 
   let userRole = null;
-  let payload = null;
+  let branchId = null;
 
-  try {
-    payload = JSON.parse(atob(token.split(".")[1]));
-    userRole = (payload.role || "").toLowerCase();
-
-    // Cashier/Guard working hours check
-    // if (!allowClosed && ["cashier", "guard"].includes(userRole)) {
-    //   const now = new Date();
-    //   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    //   const startMinutes = 9 * 60;        // 9:00 AM
-    //   const endMinutes = 18 * 60 + 5;
-
-    //   if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
-    //     return <Navigate to="/closed" replace />;
-    //   }
-    // }
-  } catch (err) {
-    console.error("Invalid token:", err);
-    return <Navigate to="/" replace />;
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      userRole = payload.role.toLowerCase();
+      branchId = payload.branch_id;
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+    }
   }
 
-  if (!allowedRoles.includes(userRole)) {
-    return <Navigate to={`/${userRole}`} replace />;
+  // For cashier and guard: check branch status periodically
+  useEffect(() => {
+    if (!branchId || !["cashier", "guard"].includes(userRole)) {
+      setLoading(false);
+      return;
+    }
+
+    let interval;
+    const checkBranchStatus = async () => {
+      try {
+        const { data } = await axios.get(`http://localhost:3000/branches/${branchId}`);
+        if (!data.opening_time || !data.closing_time) {
+          setIsOpen(false);
+          return;
+        }
+
+        const now = new Date();
+        const openTime = new Date(data.opening_time);
+        const closeTime = new Date(data.closing_time);
+
+        // branch is open if now is between opening and closing
+        setIsOpen(now >= openTime && now <= closeTime);
+      } catch (err) {
+        console.error("Failed to fetch branch times:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkBranchStatus();
+    interval = setInterval(checkBranchStatus, 5000); // check every 5 seconds
+    return () => clearInterval(interval);
+  }, [branchId, userRole]);
+
+  if (!token) return <Navigate to="/" replace />; // no token
+  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />; // not authorized
+
+  // Redirect to closed page if branch is closed
+  if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
+    return <Navigate to="/closed" state={{ branchId }} replace />;
   }
 
-  return children; // Render the children if authorized
+  return children; // render children if all checks passed
 };
 
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
   allowedRoles: PropTypes.arrayOf(PropTypes.string).isRequired,
-  allowClosed: PropTypes.bool,
 };
 
 export default ProtectedRoute;
-
