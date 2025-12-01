@@ -18,7 +18,6 @@ import visitsRoute from "./routes/visit.route.js";
 import rangeRoute from "./routes/range.route.js";
 import playersRoute from "./routes/players.route.js";
 import docsRoute from "./routes/docs.route.js";
-// import { workingHoursGuard } from "./middlewares/workinghours.middleware.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,11 +108,7 @@ app.get("/cashier", verifyUser(["cashier", "superadmin", "kaizen"]), (req, res) 
 app.get("/guard", verifyUser(["guard", "cashier", "superadmin", "kaizen"]), (req, res) => {
   return res.json({ Status: "Guard Access", name: req.user });
 });
-// Cashier working hours check
-// app.get("/members/checkWorkingHours", verifyUser(["cashier"]), workingHoursGuard, (_, res) => res.json({ isClosed: false }));
 
-// Guard working hours check
-// app.get("/guard/checkWorkingHours", verifyUser(["guard"]), workingHoursGuard, (_, res) => res.json({ isClosed: false }));
 
 const port = process.env.PORT || 12991;
 
