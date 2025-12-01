@@ -3,8 +3,19 @@ import { db } from "../connect.js";
 
 export const getBranches = async (_, res) => {
   try {
-    // const [rows] = await db.query("SELECT * FROM branches");
-    const [rows] = await db.query("SELECT * FROM branches ORDER BY id DESC");
+    const [rows] = await db.query(
+      `SELECT
+         id,
+         sname,
+         address,
+         cperson,
+         contact,
+         position,
+         opening_time AS open_time,
+         closing_time AS close_time
+       FROM branches
+       ORDER BY id DESC`
+    );
     res.status(200).json(rows);
   } catch (error) {
     console.error("Error fetching branches:", error);
@@ -29,6 +40,30 @@ export const updateBranch = async (req, res) => {
     res.json({ success: true, message: "Branch updated successfully" });
   } catch (err) {
     console.error("Update branch error:", err);
+    res.status(500).json({ error: "Database update failed" });
+  }
+};
+
+export const updateBranchTime = async (req, res) => {
+  const { id } = req.params;
+  const { open_time, close_time } = req.body;
+
+  if (!open_time || !close_time) {
+    return res.status(400).json({ error: "Both open_time and close_time are required" });
+  }
+
+  try {
+    await db.execute(
+      `UPDATE branches SET 
+        opening_time = ?, 
+        closing_time = ?
+      WHERE id = ?`,
+      [open_time, close_time, id]
+    );
+
+    res.json({ success: true, message: "Branch times updated successfully." });
+  } catch (err) {
+    console.error("Update time error:", err);
     res.status(500).json({ error: "Database update failed" });
   }
 };
@@ -101,6 +136,21 @@ const deleteBranch = async (req, res) => {
   } catch (error) {
     console.error("Error deleting branch:", error.message);
     return res.status(500).json({ error: "An unexpected error occurred." });
+  }
+};
+
+export const getBranchById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.execute(
+      "SELECT id, sname, opening_time, closing_time FROM branches WHERE id = ?",
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Branch not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Get branch error:", err);
+    res.status(500).json({ error: "Failed to get branch" });
   }
 };
 
