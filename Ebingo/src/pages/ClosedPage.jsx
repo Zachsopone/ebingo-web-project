@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function ClosedPage() {
   const [timeLeft, setTimeLeft] = useState("");
   const setOpeningTimeDisplay = () => {};
@@ -16,7 +18,7 @@ export default function ClosedPage() {
 
     const updateTimer = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:3000/branches/${branchId}`);
+        const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
         const now = new Date();
         const openingTime = new Date(data.opening_time);
         const closingTime = new Date(data.closing_time);
