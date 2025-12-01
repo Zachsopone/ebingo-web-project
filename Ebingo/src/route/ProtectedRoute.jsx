@@ -4,6 +4,8 @@ import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = Cookies.get("accessToken");
   const [isOpen, setIsOpen] = useState(true); // assume open by default
@@ -32,7 +34,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     let interval;
     const checkBranchStatus = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:3000/branches/${branchId}`);
+        const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
         if (!data.opening_time || !data.closing_time) {
           setIsOpen(false);
           return;
