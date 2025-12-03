@@ -1,8 +1,9 @@
 import { db } from "../connect.js";
 
 
-export const getBranches = async (_, res) => {
+export const getBranches = async (req, res) => {
   try {
+    if(req.branch_id){
     const [rows] = await db.query(
       `SELECT
          id,
@@ -12,9 +13,12 @@ export const getBranches = async (_, res) => {
          opening_time AS open_time,
          closing_time AS close_time
        FROM branches
-       ORDER BY id DESC`
+       WHERE id = ?,
+       ORDER BY id DESC`,
+       [req.branch_id]
     );
     res.status(200).json(rows);
+    }
   } catch (error) {
     console.error("Error fetching branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
