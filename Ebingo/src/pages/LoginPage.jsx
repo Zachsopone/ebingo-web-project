@@ -34,9 +34,8 @@ const LoginPage = () => {
       }
 
       // Save token to cookie (1 day)
-      // Cookies.set("accessToken", token, { expires: 1, sameSite: "Lax" });
-      Cookies.set("accessToken", token, { expires: 1, sameSite: "None", secure: true });
-
+      Cookies.set("accessToken", token, { expires: 1, sameSite: "Lax" });
+      
       // Set default Authorization header so guarded GETs work
       // axios.defaults.headers.common.Authorization = `Bearer ${token}`;
 
