@@ -375,6 +375,9 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
               type="date"
               placeholder="Date of Birth"
               required
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 21))
+                .toISOString()
+                .split("T")[0]} // Set max date to 21 years ago from today
               onChange={(e) => setValues({ ...values, birthdate: e.target.value })}
             />
             <input
