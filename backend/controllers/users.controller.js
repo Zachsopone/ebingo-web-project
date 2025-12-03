@@ -15,9 +15,14 @@ export const getUsers = async (_, res) => {
       ORDER BY u.ID DESC
     `);
 
-    const formattedDate = date.toISOString().slice(0, 19).replace("T"," ");
-    
-    res.status(200).json(formattedDate);
+    // Format timestamp to match MySQL Date Created (no AM/PM)
+    const formattedRows = rows.map(user => {
+      const date = new Date(user.Date_created);
+      const formattedDate = date.toISOString().slice(0, 19).replace("T", " ");
+      return { ...user, Date_created: formattedDate };
+    });
+
+    res.status(200).json(formattedRows);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ error: "Failed to fetch users." });
