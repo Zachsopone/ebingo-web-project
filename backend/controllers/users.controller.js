@@ -17,7 +17,7 @@ export const getUsers = async (_, res) => {
 
     const formattedDate = date.toISOString().slice(0, 19).replace("T"," ");
     
-    res.status(200).json(formattedRows);
+    res.status(200).json(formattedDate);
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ error: "Failed to fetch users." });
