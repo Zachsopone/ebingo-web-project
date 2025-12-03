@@ -3,7 +3,7 @@ import { db } from "../connect.js";
 
 export const getBranches = async (req, res) => {
   try {
-    if(req.branch_id){
+    if (req.role && String(req.role).toLowerCase() === "superadmin" && req.branch_id) {
     const [rows] = await db.query(
       `SELECT
          id,
