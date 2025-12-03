@@ -50,6 +50,11 @@ const LoginPage = () => {
       const role = (payload.role || "").toLowerCase();
       const branchId = payload.branch_id;
 
+      Cookies.set("userRole", role || "", { expires: 1, sameSite: "Lax" });
+      if (branchId !== undefined && branchId !== null) {
+        Cookies.set("userBranchId", branchId, { expires: 1, sameSite: "Lax" });
+      }
+
       // Route by role
       switch (role) {
         case "cashier":
