@@ -226,15 +226,21 @@ const Branches = () => {
   useEffect(() => { fetchBranches(); }, []);
 
   const fetchBranches = () => {
+    const role = Cookies.get("userRole");
+    const branchId = Cookies.get("userBranchId"); // branch id of logged-in superadmin
+
+    // Prepare request body
+    const body = role === "superadmin" ? { branch_id: branchId } : {};
+
     axios
-      .get(`${API_URL}/branches`) // backend will handle filtering
+      .post(`${API_URL}/branches`, body)
       .then((res) => setBranches(res.data))
       .catch((err) => {
         console.error(err);
         enqueueSnackbar("Failed to load branches.", { variant: "error" });
       });
   };
-
+  
   const handleChange = (field, value) => setEditedBranch(prev => ({ ...prev, [field]: value }));
 
   const handleEditClick = (index) => { setEditIndex(index); setEditedBranch({ ...branches[index] }); };
