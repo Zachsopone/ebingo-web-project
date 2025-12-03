@@ -30,6 +30,13 @@ const allowedOrigins = [
     'https://ebingo-web-project.onrender.com'
 ];
 
+app.use((req,res,next)=>{
+  console.log("🔹 Incoming Cookie:", req.headers.cookie);
+  console.log("🔹 Parsed cookie:", req.cookies);
+  console.log("🔹 Auth header:", req.headers.authorization);
+  next();
+});
+
 app.use(express.json({ limit: "10mb" })); 
 app.use(
   cors({
@@ -45,6 +52,8 @@ app.use(
   })
 );
 app.use(cookieParser());
+
+
 
 //ROUTES
 app.use("/auth", authRoutes);
