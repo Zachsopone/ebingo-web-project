@@ -3,28 +3,23 @@ import { db } from "../connect.js";
 
 export const getBranches = async (req, res) => {
   try {
-    let rows;
-    if (req.role === "superadmin") {
-      // Only fetch branch of the superadmin
-      [rows] = await db.query(
-        `SELECT id, sname, address, branchemail, opening_time AS open_time, closing_time AS close_time
-         FROM branches
-         WHERE id = ?
-         ORDER BY id DESC`,
-        [req.branch_id]
-      );
-    } else {
-      // Other roles see all branches
-      [rows] = await db.query(
-        `SELECT id, sname, address, branchemail, opening_time AS open_time, closing_time AS close_time
-         FROM branches
-         ORDER BY id DESC`
-      );
+    const role = req.user.role;
+    const branchIdHeader = req.headers["branch-id"];
+
+    let query = "SELECT * FROM branches";
+
+    if (role === "superadmin" && branchIdHeader) {
+      query += " WHERE id = ?";
+      const [rows] = await db.query(query, [branchIdHeader]);
+      return res.json(rows);
     }
-    res.status(200).json(rows);
+
+    const [rows] = await db.query(query); // kaizen sees all
+    res.json(rows);
+
   } catch (error) {
-    console.error("Error fetching branches:", error);
-    res.status(500).json({ error: "Failed to fetch branches." });
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
   }
 };
 
