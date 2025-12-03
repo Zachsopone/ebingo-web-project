@@ -227,7 +227,7 @@ const Branches = () => {
 
   const fetchBranches = () => {
     axios
-      .get(`${API_URL}/branches`)
+      .get(`${API_URL}/branches`, { withCredentials: true }) // <-- fix added
       .then((res) => setBranches(res.data))
       .catch((err) => {
         console.error(err);
