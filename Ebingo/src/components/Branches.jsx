@@ -225,20 +225,36 @@ const Branches = () => {
 
   useEffect(() => { fetchBranches(); }, []);
 
+
   const fetchBranches = () => {
-    const role = Cookies.get("userRole");
-    const branchId = Cookies.get("userBranchId"); // branch id of logged-in superadmin
+    // read role/branch info saved at login
+    const role = Cookies.get("userRole") || "";       // make sure you set this at login
+    const branchId = Cookies.get("userBranchId") || ""; // make sure you set this at login
 
-    // Prepare request body
-    const body = role === "superadmin" ? { branch_id: branchId } : {};
-
-    axios
-      .post(`${API_URL}/branches`, body)
-      .then((res) => setBranches(res.data))
-      .catch((err) => {
-        console.error(err);
-        enqueueSnackbar("Failed to load branches.", { variant: "error" });
-      });
+    // If user is superadmin and branch id exists, send it in the body (POST).
+    // Also set withCredentials so cookies (accessToken) will be sent to the API.
+    if (role.toLowerCase() === "superadmin" && branchId) {
+      axios
+        .post(
+          `${API_URL}/branches`,
+          { branch_id: branchId },
+          { withCredentials: true } // important -> send cookie
+        )
+        .then((res) => setBranches(res.data))
+        .catch((err) => {
+          console.error("Branches load error (POST):", err);
+          enqueueSnackbar("Failed to load branches.", { variant: "error" });
+        });
+    } else {
+      // other roles: fall back to GET (public)
+      axios
+        .get(`${API_URL}/branches`)
+        .then((res) => setBranches(res.data))
+        .catch((err) => {
+          console.error("Branches load error (GET):", err);
+          enqueueSnackbar("Failed to load branches.", { variant: "error" });
+        });
+    }
   };
   
   const handleChange = (field, value) => setEditedBranch(prev => ({ ...prev, [field]: value }));
