@@ -26,7 +26,7 @@ const LoginPage = () => {
       const { data } = await axios.post(`${API_URL}/auth/login`, {
         Username: values.Username,
         Password: values.Password,
-      });
+      }, { withCredentials: true });
 
       const { token } = data || {};
       if (!token) {
@@ -50,11 +50,9 @@ const LoginPage = () => {
       const role = (payload.role || "").toLowerCase();
       const branchId = payload.branch_id;
 
-      Cookies.set("userRole", role || "", { expires: 1, sameSite: "Lax" });
-      if (branchId !== undefined && branchId !== null) {
-        Cookies.set("userBranchId", branchId, { expires: 1, sameSite: "Lax" });
-      }
-
+      Cookies.set("userRole", role, { expires: 1, sameSite: "Lax" });            
+      Cookies.set("userBranchId", branchId, { expires: 1, sameSite: "Lax" });   
+      
       // Route by role
       switch (role) {
         case "cashier":
