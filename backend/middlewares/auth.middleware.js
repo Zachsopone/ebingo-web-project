@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 
+
 const SECRET_KEY = process.env.JWT_SECRET;
 
 const verifyUser = (requiredRoles) => {
@@ -8,8 +9,8 @@ const verifyUser = (requiredRoles) => {
       req.cookies?.accessToken ||
       (req.headers.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
-        : null);
-    
+        : null) || req.headers["x-access-token"];
+
     if (!token) {
       return res.status(401).json({ error: "Token not found" });
     }
