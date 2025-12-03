@@ -223,17 +223,38 @@ const Branches = () => {
   const dropdownContainerRef = useRef(null);
   const containerRef = useRef(null);
 
-  useEffect(() => { fetchBranches(); }, []);
 
-  const fetchBranches = () => {
-    axios
-      .get(`${API_URL}/branches`, { withCredentials: true }) // <-- fix added
-      .then((res) => setBranches(res.data))
-      .catch((err) => {
-        console.error(err);
-        enqueueSnackbar("Failed to load branches.", { variant: "error" });
-      });
+  const getBranchId = () => {
+    const token = Cookies.get("accessToken");
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.branch_id || null;
+    } catch {
+      return null;
+    }
   };
+
+  const fetchBranches = async () => {
+    try {
+      const branchId = getBranchId();
+      const res = await axios.get(`${API_URL}/branches`, {
+        headers: { "branch-id": branchId }
+      });
+
+      // Only return 1 branch for superadmin
+      setBranches(res.data);
+
+    } catch (err) {
+      console.error("Fetch Branch Error:", err);
+      enqueueSnackbar("Failed to load branches.", { variant: "error" });
+    }
+  };
+  
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
 
   const handleChange = (field, value) => setEditedBranch(prev => ({ ...prev, [field]: value }));
 
