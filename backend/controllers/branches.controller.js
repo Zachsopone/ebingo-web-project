@@ -4,7 +4,7 @@ import { db } from "../connect.js";
 export const getBranches = async (req, res) => {
   try {
     const role = req.role;   // safer than req.user
-    const branchId = req.headers["branch-id"]; // header from frontend
+    const branchId = req.headers["x-branch-id"]; // header from frontend
 
     let query = "SELECT * FROM branches";
 
