@@ -240,7 +240,7 @@ const Branches = () => {
       const branchId = getBranchId();
 
       const res = await axios.get(`${API_URL}/branches`, {
-        headers: { "branch-id": branchId }  // same header name backend uses
+        headers: { "x-branch-id": branchId }  // same header name backend uses
       });
 
       setBranches(res.data);
