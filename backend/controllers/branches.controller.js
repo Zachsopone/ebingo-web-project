@@ -3,19 +3,30 @@ import { db } from "../connect.js";
 
 export const getBranches = async (req, res) => {
   try {
-    const { role, branch_id } = req.user;
+    let query = `SELECT
+                   id,
+                   sname,
+                   address,
+                   branchemail,
+                   opening_time AS open_time,
+                   closing_time AS close_time
+                 FROM branches`;
 
-    if (role === "superadmin") {
-      const [rows] = await db.query("SELECT * FROM branches WHERE id = ?", [branch_id]);
-      return res.json(rows);
+    const params = [];
+
+    // If user is superadmin, restrict to their branch only
+    if (req.role === "superadmin") {
+      query += " WHERE id = ?";
+      params.push(req.branch_id);
     }
 
-    const [rows] = await db.query("SELECT * FROM branches");
-    res.json(rows);
+    query += " ORDER BY id DESC";
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server Error" });
+    const [rows] = await db.execute(query, params);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error fetching branches:", error);
+    res.status(500).json({ error: "Failed to fetch branches." });
   }
 };
 
