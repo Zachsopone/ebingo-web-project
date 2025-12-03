@@ -237,34 +237,20 @@ const Branches = () => {
 
   const fetchBranches = async () => {
     try {
-      const branchId = getBranchId(); // ⬅ extract from JWT
+      const branchId = getBranchId();
 
-      // Decode role from the same JWT (if present)
-      let role = null;
-      const token = Cookies.get("accessToken");
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          role = payload.role || null;
-        } catch {
-          // ignore decode errors and keep role as null
-        }
-      }
-      
       const res = await axios.get(`${API_URL}/branches`, {
-        headers: { "branch-id": branchId }, // ⬅ attach branch id
+        headers: { "branch-id": branchId }  // same header name backend uses
       });
 
-      setBranches(role === "superadmin" 
-        ? res.data.filter(b => b.id === branchId) // only their branch
-        : res.data // kaizen/admin sees all
-      );
+      setBranches(res.data);
 
     } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to load branches.", { variant: "error" });
+      console.error("Fetch Branch Error:", err);
+      enqueueSnackbar("Failed to load branches", { variant: "error" });
     }
   };
+
 
   useEffect(() => {
     fetchBranches();
