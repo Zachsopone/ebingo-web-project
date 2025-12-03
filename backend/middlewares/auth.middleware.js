@@ -1,17 +1,15 @@
 import jwt from "jsonwebtoken";
 
-
 const SECRET_KEY = process.env.JWT_SECRET;
 
 const verifyUser = (requiredRoles) => {
   return (req, res, next) => {
     const token =
-    req.cookies?.accessToken ||
-    req.headers["x-access-token"] || // <-- read custom header
-    (req.headers.authorization?.startsWith("Bearer ")
+      req.cookies?.accessToken ||
+      (req.headers.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
         : null);
-
+    
     if (!token) {
       return res.status(401).json({ error: "Token not found" });
     }
