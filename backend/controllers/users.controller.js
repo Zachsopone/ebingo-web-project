@@ -15,20 +15,8 @@ export const getUsers = async (_, res) => {
       ORDER BY u.ID DESC
     `);
 
-    const formattedRows = rows.map(user => {
-      const date = new Date(user.Date_created);
-      const formattedDate = date.toLocaleString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,   // if you want AM/PM
-      });
-      return { ...user, Date_created: formattedDate };
-    });
-
+    const formattedDate = date.toISOString().slice(0, 19).replace("T"," ");
+    
     res.status(200).json(formattedRows);
   } catch (error) {
     console.error("Error fetching users:", error);
