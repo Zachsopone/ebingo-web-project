@@ -3,22 +3,25 @@ import { db } from "../connect.js";
 
 export const getBranches = async (req, res) => {
   try {
-    if (req.role && String(req.role).toLowerCase() === "superadmin" && req.branch_id) {
-    const [rows] = await db.query(
-      `SELECT
-         id,
-         sname,
-         address,
-         branchemail,
-         opening_time AS open_time,
-         closing_time AS close_time
-       FROM branches
-       WHERE id = ?,
-       ORDER BY id DESC`,
-       [req.branch_id]
-    );
-    res.status(200).json(rows);
+    let rows;
+    if (req.role === "superadmin") {
+      // Only fetch branch of the superadmin
+      [rows] = await db.query(
+        `SELECT id, sname, address, branchemail, opening_time AS open_time, closing_time AS close_time
+         FROM branches
+         WHERE id = ?
+         ORDER BY id DESC`,
+        [req.branch_id]
+      );
+    } else {
+      // Other roles see all branches
+      [rows] = await db.query(
+        `SELECT id, sname, address, branchemail, opening_time AS open_time, closing_time AS close_time
+         FROM branches
+         ORDER BY id DESC`
+      );
     }
+    res.status(200).json(rows);
   } catch (error) {
     console.error("Error fetching branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
