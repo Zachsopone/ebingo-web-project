@@ -3,23 +3,25 @@ import { db } from "../connect.js";
 
 export const getBranches = async (req, res) => {
   try {
-    const role = req.user.role;
-    const branchIdHeader = req.headers["branch-id"];
+    const role = req.role;   // safer than req.user
+    const branchId = req.headers["branch-id"]; // header from frontend
 
     let query = "SELECT * FROM branches";
 
-    if (role === "superadmin" && branchIdHeader) {
+    // Only superadmin is restricted, kaizen can see all
+    if (role === "superadmin" && branchId) {
       query += " WHERE id = ?";
-      const [rows] = await db.query(query, [branchIdHeader]);
+      const [rows] = await db.query(query, [branchId]);
       return res.json(rows);
     }
 
-    const [rows] = await db.query(query); // kaizen sees all
-    res.json(rows);
+    // 🔥 Kaizen returns everything
+    const [rows] = await db.query(query);
+    return res.json(rows);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    console.error("Server Branch Error:", error);
+    return res.status(500).json({ error: "Server Error" });
   }
 };
 
