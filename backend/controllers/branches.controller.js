@@ -27,7 +27,6 @@ export const getBranchesFiltered = async (req, res) => {
     // Accept branch_id either from request body (frontend) OR from authenticated token (req.branch_id)
     const bodyBranchId = req.body?.branch_id;
     const tokenBranchId = req.branch_id; // set by auth.middleware if verifyUser was used
-    const role = req.role; // optional, set by middleware
 
     // Determine which branch id to use:
     // Priority: explicit body.branch_id (frontend) → tokenBranchId (middleware) → undefined (no filter)
