@@ -1,16 +1,51 @@
 import { db } from "../connect.js";
 
 
-export const getBranches = async (req, res) => {
+export const getBranches = async (_req, res) => {
   try {
-    const { branch_id } = req.body; // frontend will send branch_id for superadmin
+    const [rows] = await db.query(
+      `SELECT
+         id,
+         sname,
+         address,
+         branchemail,
+         opening_time AS open_time,
+         closing_time AS close_time
+       FROM branches
+       ORDER BY id DESC`
+    );
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error fetching branches:", error);
+    res.status(500).json({ error: "Failed to fetch branches." });
+  }
+};
 
-    let query = "SELECT * FROM branches";
+
+export const getBranchesFiltered = async (req, res) => {
+  try {
+    // Accept branch_id either from request body (frontend) OR from authenticated token (req.branch_id)
+    const bodyBranchId = req.body?.branch_id;
+    const tokenBranchId = req.branch_id; // set by auth.middleware if verifyUser was used
+    const role = req.role; // optional, set by middleware
+
+    // Determine which branch id to use:
+    // Priority: explicit body.branch_id (frontend) → tokenBranchId (middleware) → undefined (no filter)
+    const branchIdToUse = bodyBranchId ?? tokenBranchId ?? null;
+
+    let query = `SELECT
+                   id,
+                   sname,
+                   address,
+                   branchemail,
+                   opening_time AS open_time,
+                   closing_time AS close_time
+                 FROM branches`;
     const params = [];
 
-    if (branch_id) {
+    if (branchIdToUse) {
       query += " WHERE id = ?";
-      params.push(branch_id);
+      params.push(branchIdToUse);
     }
 
     query += " ORDER BY id DESC";
@@ -18,9 +53,9 @@ export const getBranches = async (req, res) => {
     const [rows] = await db.query(query, params);
 
     res.status(200).json(rows);
-  } catch (err) {
-    console.error("Failed to fetch branches:", err);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error) {
+    console.error("Error fetching filtered branches:", error);
+    res.status(500).json({ error: "Failed to fetch branches." });
   }
 };
 
