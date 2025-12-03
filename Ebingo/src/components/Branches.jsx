@@ -223,43 +223,17 @@ const Branches = () => {
   const dropdownContainerRef = useRef(null);
   const containerRef = useRef(null);
 
-  const getTokenPayload = () => {
-    const token = Cookies.get("accessToken");
-    if (!token) return null;
-    try {
-      return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-      return null;
-    }
-  };
-
-  const fetchBranches = async () => {
-    const token = Cookies.get("accessToken");       // read stored token
-    const payload = getTokenPayload();              // decode token
-
-    if (!token || !payload)
-      return enqueueSnackbar("Authentication Required", { variant: "error" });
-
-    try {
-      const res = await axios.get(`${API_URL}/branches`, {
-        headers: {
-          "x-access-token": token,                  // <-- send token manually
-          "x-branch-id": payload.branch_id          // <-- filter branch backend
-        }
-      });
-
-      setBranches(payload.role === "superadmin"
-        ? res.data.filter(b => b.id === payload.branch_id)
-        : res.data
-      );
-
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to load branches.", { variant: "error" });
-    }
-  };
-
   useEffect(() => { fetchBranches(); }, []);
+
+  const fetchBranches = () => {
+    axios
+      .get(`${API_URL}/branches`) // backend will handle filtering
+      .then((res) => setBranches(res.data))
+      .catch((err) => {
+        console.error(err);
+        enqueueSnackbar("Failed to load branches.", { variant: "error" });
+      });
+  };
 
   const handleChange = (field, value) => setEditedBranch(prev => ({ ...prev, [field]: value }));
 
