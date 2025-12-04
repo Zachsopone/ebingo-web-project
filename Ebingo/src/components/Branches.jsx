@@ -449,19 +449,25 @@ const Branches = () => {
                               <MdMoreTime
                                 onClick={async () => {
                                   const b = branches[index];
-
                                   if (!b.open_time || !b.close_time) {
                                     enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
                                     return;
                                   }
 
+                                  // Convert to UTC dates
+                                  const openUTC = new Date(b.open_time + "Z"); // ensure UTC
+                                  const closeUTC = new Date(b.close_time + "Z");
+
+                                  if (openUTC >= closeUTC) {
+                                    enqueueSnackbar(`Opening time must be before closing time for ${b.sname}.`, { variant: "error" });
+                                    return;
+                                  }
+
                                   try {
-                                    // Send times to backend route /branches/:id/time
                                     await axios.put(`${API_URL}/branches/${b.id}/time`, {
                                       open_time: b.open_time,
                                       close_time: b.close_time,
                                     });
-
                                     enqueueSnackbar(`${b.sname} time updated successfully.`, { variant: "success" });
                                   } catch (err) {
                                     console.error("Time update error:", err);
