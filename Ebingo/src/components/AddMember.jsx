@@ -221,6 +221,11 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
     }
   };
 
+  const today = new Date();
+  const minAllowedBirthdate = new Date();
+  minAllowedBirthdate.setFullYear(today.getFullYear() - 21);
+  const maxBirthdate = minAllowedBirthdate.toISOString().split("T")[0];
+
   return (
     <div className="w-full h-screen flex justify-center items-center">
       <form
@@ -370,16 +375,25 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
               required
               onChange={(e) => setValues({ ...values, permaddress: e.target.value })}
             />
+            
             <input
               className="w-[30%] outline-none border ml-4 mt-4 p-2 border-black rounded-md placeholder:text-gray-600"
               type="date"
               placeholder="Date of Birth"
               required
-              max={new Date(new Date().setFullYear(new Date().getFullYear() - 21))
-                .toISOString()
-                .split("T")[0]} // Set max date to 21 years ago from today
-              onChange={(e) => setValues({ ...values, birthdate: e.target.value })}
+              max={maxBirthdate}
+              onChange={(e) => {
+                const selectedDate = new Date(e.target.value);
+                if (selectedDate > minAllowedBirthdate) {
+                  enqueueSnackbar("Member must be **21 years old or above**.", { variant: "error" });
+                  setValues({ ...values, birthdate: "" });
+                  e.target.value = "";
+                  return;
+                }
+                setValues({ ...values, birthdate: e.target.value });
+              }}
             />
+            
             <input
               className="w-[30%] outline-none border ml-4 mt-4 p-2 border-black rounded-md"
               type="tel"
