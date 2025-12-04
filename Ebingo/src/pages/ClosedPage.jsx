@@ -6,7 +6,6 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ClosedPage() {
   const [timeLeft, setTimeLeft] = useState("");
-  const setOpeningTimeDisplay = () => {};
   const location = useLocation();
   const navigate = useNavigate();
   const branchId = location.state?.branchId;
@@ -20,35 +19,31 @@ export default function ClosedPage() {
       try {
         const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
         const now = new Date();
-        const openingTime = new Date(data.opening_time);
-        const closingTime = new Date(data.closing_time);
+        const openingTime = new Date(data.opening_time + "Z"); // UTC
+        const closingTime = new Date(data.closing_time + "Z");
 
-        // If branch is currently open, redirect immediately
         if (now >= openingTime && now <= closingTime) {
+          // redirect to appropriate page
           const token = document.cookie
             .split("; ")
             .find((row) => row.startsWith("accessToken="));
           if (token) {
             const payload = JSON.parse(atob(token.split("=")[1].split(".")[1]));
-            if (payload.role.toLowerCase() === "cashier") navigate("/cashier/members", { replace: true });
-            else if (payload.role.toLowerCase() === "guard") navigate("/guard", { replace: true });
+            const role = payload.role.toLowerCase();
+            if (role === "cashier") navigate("/cashier/members", { replace: true });
+            else if (role === "guard") navigate("/guard", { replace: true });
           }
           return;
         }
 
-        const diff = openingTime - now;
-
-        if (diff <= 0) {
-          // Opening time is in the past → display fixed message
+        const diffMs = openingTime - now;
+        if (diffMs <= 0) {
           setTimeLeft("");
-          setOpeningTimeDisplay(openingTime.toLocaleString());
         } else {
-          // Opening time is in the future → display countdown
-          const h = Math.floor(diff / 1000 / 60 / 60);
-          const m = Math.floor((diff / 1000 / 60) % 60);
-          const s = Math.floor((diff / 1000) % 60);
+          const h = Math.floor(diffMs / 1000 / 60 / 60);
+          const m = Math.floor((diffMs / 1000 / 60) % 60);
+          const s = Math.floor((diffMs / 1000) % 60);
           setTimeLeft(`${h}h ${m}m ${s}s`);
-          setOpeningTimeDisplay("");
         }
       } catch (err) {
         console.error("Failed to fetch branch opening time", err);
