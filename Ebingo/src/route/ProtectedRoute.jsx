@@ -41,10 +41,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         }
 
         const now = new Date();
-        const openTime = new Date(data.opening_time);
-        const closeTime = new Date(data.closing_time);
+        const openTime = new Date(data.opening_time + "Z"); // treat as UTC
+        const closeTime = new Date(data.closing_time + "Z");
 
-        // branch is open if now is between opening and closing
         setIsOpen(now >= openTime && now <= closeTime);
       } catch (err) {
         console.error("Failed to fetch branch times:", err);
