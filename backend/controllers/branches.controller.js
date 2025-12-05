@@ -1,6 +1,21 @@
 import { db } from "../connect.js";
 
 
+const mysqlDatetimeToISO = (dt) => {
+  if (!dt) return null;
+  // dt may already be an ISO with Z or may be "YYYY-MM-DD HH:MM:SS"
+  const s = String(dt);
+  if (s.endsWith("Z") || s.includes("T")) {
+    // try to parse and return toISOString
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  // replace first space with 'T' and append 'Z' to treat it as UTC instant
+  const iso = s.replace(" ", "T") + "Z";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 export const getBranches = async (_req, res) => {
   try {
     const [rows] = await db.query(
@@ -14,7 +29,18 @@ export const getBranches = async (_req, res) => {
        FROM branches
        ORDER BY id DESC`
     );
-    res.status(200).json(rows);
+
+    const normalized = rows.map((r) => ({
+      id: r.id,
+      sname: r.sname,
+      address: r.address,
+      branchemail: r.branchemail,
+      // return ISO strings (UTC)
+      opening_time: mysqlDatetimeToISO(r.opening_time),
+      closing_time: mysqlDatetimeToISO(r.closing_time),
+    }));
+
+    res.status(200).json(normalized);
   } catch (error) {
     console.error("Error fetching branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
@@ -51,7 +77,16 @@ export const getBranchesFiltered = async (req, res) => {
 
     const [rows] = await db.query(query, params);
 
-    res.status(200).json(rows);
+    const normalized = rows.map((r) => ({
+      id: r.id,
+      sname: r.sname,
+      address: r.address,
+      branchemail: r.branchemail,
+      opening_time: mysqlDatetimeToISO(r.opening_time),
+      closing_time: mysqlDatetimeToISO(r.closing_time),
+    }));
+
+    res.status(200).json(normalized);
   } catch (error) {
     console.error("Error fetching filtered branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
