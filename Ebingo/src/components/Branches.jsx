@@ -61,60 +61,33 @@ const formatDateTimeDisplay = (mysqlDatetime) => {
   return `${dateStr} • ${hour}:${minute} ${ampm}`;
 };
 
-// FIXED DROPDOWN PRE-SELECT
-const mysqlToParts = (mysqlDatetime) => {
-  if (!mysqlDatetime) {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
-    const { hour, minute, ampm } = to12HourParts(now.getHours(), now.getMinutes());
-    return { date: `${y}-${m}-${d}`, hour, minute, ampm };
-  }
 
-  const p = parseBackendDatetimeUTC(mysqlDatetime);
-  if (!p) return mysqlToParts(null);
-
-  const date = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
-  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
-
-  return { date, hour, minute, ampm };
-};
-
-
-// Convert parts to MySQL DATETIME string (local)
+// Convert parts to MySQL DATETIME
 const partsToMySQL = (dateStr, hourStr, minuteStr, ampm) => {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-").map(Number);
   let hour = parseInt(hourStr, 10);
-
   if (ampm === "PM" && hour !== 12) hour += 12;
   if (ampm === "AM" && hour === 12) hour = 0;
-
   const dt = new Date(y, m - 1, d, hour, parseInt(minuteStr, 10), 0);
-
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:00`;
 };
 
 const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
   // initialDatetime is a MySQL DATETIME or empty
   const containerRef = useRef(null);
-  const { date, hour, minute, ampm } = mysqlToParts(initialDatetime);
+  const { date, hour, minute, ampm } = initialDatetime ? parseBackendDatetimeUTC(initialDatetime) || {} : {};
+  const now = new Date();
 
-  const [selDate, setSelDate] = useState(date);
+  const [selDate, setSelDate] = useState(date || now.toISOString().split("T")[0]);
   const [selHour, setSelHour] = useState(hour);
   const [selMinute, setSelMinute] = useState(minute);
   const [selAmpm, setSelAmpm] = useState(ampm);
 
   const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-
-  useEffect(() => {
-    const parts = mysqlToParts(initialDatetime);
-    setSelDate(parts.date);
-    setSelHour(parts.hour);
-    setSelMinute(parts.minute);
-    setSelAmpm(parts.ampm);
-  }, [initialDatetime]);
+  
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -124,9 +97,6 @@ const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [onClose]);
-
-  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
-  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
   return (
     <div ref={containerRef} className="absolute z-40 w-80 bg-white border rounded shadow-lg p-3">
@@ -228,12 +198,12 @@ const Branches = () => {
 
   const fetchBranches = () => {
     // read role/branch info saved at login
-    const role = Cookies.get("userRole") || "";       // make sure you set this at login
-    const branchId = Cookies.get("userBranchId") || ""; // make sure you set this at login
+    const role = Cookies.get("userRole")?.toLowerCase();       // make sure you set this at login
+    const branchId = Cookies.get("userBranchId"); // make sure you set this at login
 
     // If user is superadmin and branch id exists, send it in the body (POST).
     // Also set withCredentials so cookies (accessToken) will be sent to the API.
-    if (role.toLowerCase() === "superadmin" && branchId) {
+    if (role === "superadmin" && branchId) {
       axios
         .post(
           `${API_URL}/branches`,
@@ -313,7 +283,7 @@ const Branches = () => {
     setBranchToDelete(null);
   };
 
-  const handleBranchAdded = (newBranch) => setBranches(prev => [...prev, newBranch]);
+  // const handleBranchAdded = (newBranch) => setBranches(prev => [...prev, newBranch]);
 
   const handleLogout = () => {
     axios
@@ -369,7 +339,7 @@ const Branches = () => {
   return (
     <>
       <Header />
-      <Navigation onBranchAdded={handleBranchAdded} />
+      <Navigation/>
       <h1 className="flex justify-center text-xl my-4">Branches List</h1>
 
       <div className="h-auto w-full justify-center relative" ref={containerRef}>
@@ -446,29 +416,18 @@ const Branches = () => {
                       <td className="border border-black p-1">
                           <div className="flex justify-center gap-3">
 
-                              <MdMoreTime
-                                onClick={async () => {
-                                  const b = branches[index];
-
-                                  if (!b.open_time || !b.close_time) {
-                                    enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
-                                    return;
-                                  }
-
+                              <MdMoreTime onClick={async () => {
+                                if (!branch.open_time || !branch.close_time) return enqueueSnackbar("Set both opening & closing time.", { variant: "warning" });
+                                  const openDt = new Date(branch.open_time);
+                                  const closeDt = new Date(branch.close_time);
+                                  if (openDt > closeDt) return enqueueSnackbar("Opening time cannot be after closing time.", { variant: "error" });
                                   try {
-                                    // Send times to backend route /branches/:id/time
-                                    await axios.put(`${API_URL}/branches/${b.id}/time`, {
-                                      open_time: b.open_time,
-                                      close_time: b.close_time,
-                                    });
-
-                                    enqueueSnackbar(`${b.sname} time updated successfully.`, { variant: "success" });
-                                  } catch (err) {
-                                    console.error("Time update error:", err);
-                                    enqueueSnackbar(`Failed to update times for ${b.sname}.`, { variant: "error" });
+                                    await axios.put(`${API_URL}/branches/${branch.id}/time`, { open_time: branch.open_time, close_time: branch.close_time });
+                                    enqueueSnackbar("Times updated successfully.", { variant: "success" });
+                                  } catch {
+                                    enqueueSnackbar("Failed to update times.", { variant: "error" });
                                   }
-                                }}
-                                className="text-green-600 text-2xl cursor-pointer"
+                                }} className="text-green-600 text-2xl cursor-pointer"
                               />
 
                               {/* EDIT / SAVE */}
