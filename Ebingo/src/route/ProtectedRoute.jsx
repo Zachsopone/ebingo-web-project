@@ -1,10 +1,19 @@
-import { Navigate} from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Helper: parse MySQL DATETIME string into local JS Date
+const parseMySQLDatetimeLocal = (mysqlDatetime) => {
+  if (!mysqlDatetime) return null;
+  const [datePart, timePart] = mysqlDatetime.split(" ");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute, second] = timePart.split(":").map(Number);
+  return new Date(year, month - 1, day, hour, minute, second); // local time
+};
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = Cookies.get("accessToken");
@@ -32,6 +41,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     let interval;
+
     const checkBranchStatus = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
@@ -40,33 +50,41 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
           return;
         }
 
-        // Convert UTC strings to local Date objects
-        const openTime = new Date(data.opening_time);
-        const closeTime = new Date(data.closing_time);
         const now = new Date();
+        const openTime = parseMySQLDatetimeLocal(data.opening_time);
+        const closeTime = parseMySQLDatetimeLocal(data.closing_time);
 
-        setIsOpen(now >= openTime && now <= closeTime);
+        if (!openTime || !closeTime) {
+          setIsOpen(false);
+        } else {
+          setIsOpen(now >= openTime && now <= closeTime);
+        }
       } catch (err) {
         console.error("Failed to fetch branch times:", err);
+        setIsOpen(false);
       } finally {
         setLoading(false);
       }
     };
 
     checkBranchStatus();
-    interval = setInterval(checkBranchStatus, 5000);
+    interval = setInterval(checkBranchStatus, 5000); // check every 5 seconds
     return () => clearInterval(interval);
   }, [branchId, userRole]);
 
-  if (!token) return <Navigate to="/" replace />; // no token
-  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />; // not authorized
+  // No token → redirect to login
+  if (!token) return <Navigate to="/" replace />;
 
-  // Redirect to closed page if branch is closed
+  // Not authorized for this page → redirect to their home
+  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
+
+  // Branch closed → redirect to ClosedPage
   if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
     return <Navigate to="/closed" state={{ branchId }} replace />;
   }
 
-  return children; // render children if all checks passed
+  // All checks passed → render children
+  return children;
 };
 
 ProtectedRoute.propTypes = {
