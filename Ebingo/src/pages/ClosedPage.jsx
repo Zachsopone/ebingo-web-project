@@ -15,50 +15,51 @@ export default function ClosedPage() {
   useEffect(() => {
     if (!branchId) return;
 
-    const updateTimer = async () => {
-      try {
-        const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
-        const now = new Date();
-        const openingTime = new Date(data.opening_time);
-        const closingTime = new Date(data.closing_time);
+  const updateTimer = async () => {
+    if (!branchId) return;
 
+    try {
+      const { data } = await axios.get(`${API_URL}/branches/${branchId}/status`);
+      const now = new Date();
+
+      if (data.isOpen) {
         // Branch is open → redirect immediately
-        if (now >= openingTime && now <= closingTime) {
-          const token = Cookies.get("accessToken");
-          if (token) {
-            const payload = JSON.parse(atob(token.split(".")[1]));
-            const role = payload.role.toLowerCase();
-            if (role === "cashier") navigate("/cashier/members", { replace: true });
-            else if (role === "guard") navigate("/guard", { replace: true });
-          }
-          return;
+        const token = Cookies.get("accessToken");
+        if (token) {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const role = payload.role.toLowerCase();
+          if (role === "cashier") navigate("/cashier/members", { replace: true });
+          else if (role === "guard") navigate("/guard", { replace: true });
         }
-
-        // Show countdown
-        const diff = openingTime - now;
-        if (diff > 0) {
-          const h = Math.floor(diff / 1000 / 60 / 60);
-          const m = Math.floor((diff / 1000 / 60) % 60);
-          const s = Math.floor((diff / 1000) % 60);
-          setTimeLeft(`${h}h ${m}m ${s}s`);
-        } else {
-          setTimeLeft("");
-        }
-
-        setOpeningTimeDisplay(
-          openingTime.toLocaleString([], {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          })
-        );
-      } catch (err) {
-        console.error("Failed to fetch branch opening time", err);
+        return;
       }
-    };
+
+      // Calculate time left until next opening
+      const nextOpening = new Date(data.nextOpeningTime);
+      const diff = nextOpening - now;
+      if (diff > 0) {
+        const h = Math.floor(diff / 1000 / 60 / 60);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${h}h ${m}m ${s}s`);
+      } else {
+        setTimeLeft("");
+      }
+
+      setOpeningTimeDisplay(
+        nextOpening.toLocaleString([], {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      );
+    } catch (err) {
+      console.error("Failed to fetch branch opening time", err);
+    }
+  };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
