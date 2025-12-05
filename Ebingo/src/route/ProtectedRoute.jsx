@@ -32,14 +32,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
     const checkBranchStatus = async () => {
       try {
-        const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
-        const now = new Date();
-        const openTime = new Date(data.opening_time);
-        const closeTime = new Date(data.closing_time);
-
-        setIsOpen(now >= openTime && now <= closeTime);
+        const { data } = await axios.get(`${API_URL}/branches/${branchId}/status`);
+        setIsOpen(data.isOpen);
       } catch (err) {
-        console.error("Failed to fetch branch times:", err);
+        console.error("Failed to fetch branch status:", err);
         setIsOpen(false);
       } finally {
         setLoading(false);
