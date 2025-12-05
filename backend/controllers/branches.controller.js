@@ -191,8 +191,15 @@ export const getBranchById = async (req, res) => {
       "SELECT id, sname, opening_time, closing_time FROM branches WHERE id = ?",
       [id]
     );
+
     if (!rows.length) return res.status(404).json({ error: "Branch not found" });
-    res.json(rows[0]);
+
+    // Convert MySQL DATETIME to ISO string for frontend
+    const branch = rows[0];
+    branch.opening_time = new Date(branch.opening_time).toISOString();
+    branch.closing_time = new Date(branch.closing_time).toISOString();
+
+    res.json(branch);
   } catch (err) {
     console.error("Get branch error:", err);
     res.status(500).json({ error: "Failed to get branch" });
