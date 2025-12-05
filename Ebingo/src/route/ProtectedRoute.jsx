@@ -17,7 +17,7 @@ const parseMySQLDatetimeLocal = (mysqlDatetime) => {
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = Cookies.get("accessToken");
-  const [isOpen, setIsOpen] = useState(true); // assume open by default
+  const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
   let userRole = null;
@@ -26,14 +26,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload.role.toLowerCase();
+      userRole = payload.role?.toLowerCase();
       branchId = payload.branch_id;
     } catch (error) {
       console.error("Failed to decode token:", error);
     }
   }
 
-  // For cashier and guard: check branch status periodically
   useEffect(() => {
     if (!branchId || !["cashier", "guard"].includes(userRole)) {
       setLoading(false);
@@ -68,25 +67,20 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     };
 
     checkBranchStatus();
-    interval = setInterval(checkBranchStatus, 5000); // check every 5 seconds
+    interval = setInterval(checkBranchStatus, 5000);
     return () => clearInterval(interval);
   }, [branchId, userRole]);
 
-  // No token → redirect to login
   if (!token) return <Navigate to="/" replace />;
-
-  // Not authorized for this page → redirect to their home
-  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
-
-  // Branch closed → redirect to ClosedPage
+  if (!allowedRoles?.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
   if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
     return <Navigate to="/closed" state={{ branchId }} replace />;
   }
 
-  // All checks passed → render children
   return children;
 };
 
+// ✅ Add proper PropTypes validation
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
   allowedRoles: PropTypes.arrayOf(PropTypes.string).isRequired,
