@@ -7,62 +7,98 @@ import Cookies from "js-cookie";
 import { MdOutlineEdit, MdSave, MdCancel, MdDeleteOutline, MdMoreTime } from "react-icons/md";
 import { useSnackbar } from "notistack";
 
-
 const parseBackendDatetimeUTC = (mysqlDatetime) => {
   if (!mysqlDatetime) return null;
   let s = mysqlDatetime.replace(" ", "T");
-  const match = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+
+  const match = s.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/
+  );
+
   if (!match) return null;
 
-  const [ , yy, mm, dd, hh, min ] = match;
-  return {year: Number(yy), month:Number(mm), day:Number(dd), hour:Number(hh), minute:Number(min)};
+  const [, yy, mm, dd, hh, min] = match;
+
+  return {
+    year: Number(yy),
+    month: Number(mm),
+    day: Number(dd),
+    hour: Number(hh),
+    minute: Number(min),
+  };
 };
 
 // Convert 24h → 12h
 const to12HourParts = (hour24, minute) => {
   const ampm = hour24 >= 12 ? "PM" : "AM";
   const h12 = hour24 % 12 || 12;
-  return {hour: String(h12).padStart(2,"0"), minute:String(minute).padStart(2,"0"), ampm};
+  return {
+    hour: String(h12).padStart(2, "0"),
+    minute: String(minute).padStart(2, "0"),
+    ampm,
+  };
 };
 
 // FIXED READ-ONLY DISPLAY
 const formatDateTimeDisplay = (mysqlDatetime) => {
   if (!mysqlDatetime) return "";
+
   const p = parseBackendDatetimeUTC(mysqlDatetime);
   if (!p) return "";
 
-  const d = new Date(Date.UTC(p.year, p.month-1, p.day));
-  const dateStr = d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
+  // Build pure UTC date for formatting only date portion
+  const utcDate = new Date(Date.UTC(p.year, p.month - 1, p.day));
 
-  const {hour,minute,ampm} = to12HourParts(p.hour,p.minute);
+  const dateStr = utcDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
+
   return `${dateStr} • ${hour}:${minute} ${ampm}`;
 };
 
 // FIXED DROPDOWN PRE-SELECT
 const mysqlToParts = (mysqlDatetime) => {
-  if (!mysqlDatetime){
-    const now=new Date();
-    const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,"0"),
-    d=String(now.getDate()).padStart(2,"0");
-    const {hour,minute,ampm}=to12HourParts(now.getHours(),now.getMinutes());
-    return {date:`${y}-${m}-${d}`, hour, minute, ampm};
+  if (!mysqlDatetime) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const { hour, minute, ampm } = to12HourParts(now.getHours(), now.getMinutes());
+    return { date: `${y}-${m}-${d}`, hour, minute, ampm };
   }
-  const p=parseBackendDatetimeUTC(mysqlDatetime); if(!p)return mysqlToParts(null);
-  const date=`${p.year}-${String(p.month).padStart(2,"0")}-${String(p.day).padStart(2,"0")}`;
-  const {hour,minute,ampm}=to12HourParts(p.hour,p.minute);
-  return {date,hour,minute,ampm};
+
+  const p = parseBackendDatetimeUTC(mysqlDatetime);
+  if (!p) return mysqlToParts(null);
+
+  const date = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
+
+  return { date, hour, minute, ampm };
 };
 
 
 // Convert parts to MySQL DATETIME string (local)
-const partsToMySQL = (dateStr, hourStr, minuteStr, ampm) => {
+const partsToMySQLUTC = (dateStr, hourStr, minuteStr, ampm) => {
   if (!dateStr) return null;
-  const [y,m,d] = dateStr.split("-").map(Number);
-  let hour = parseInt(hourStr);
-  if(ampm==="PM" && hour!==12) hour+=12;
-  if(ampm==="AM" && hour===12) hour=0;
-  const dt=new Date(y,m-1,d,hour,parseInt(minuteStr));
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:00`;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  let hour = parseInt(hourStr, 10);
+  if (ampm === "PM" && hour !== 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  // Create a local Date first
+  const localDate = new Date(y, m - 1, d, hour, parseInt(minuteStr, 10), 0);
+  // Convert to UTC string for MySQL
+  const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+  return `${utcDate.getFullYear()}-${String(utcDate.getMonth() + 1).padStart(2, "0")}-${String(
+    utcDate.getDate()
+  ).padStart(2, "0")} ${String(utcDate.getHours()).padStart(2, "0")}:${String(
+    utcDate.getMinutes()
+  ).padStart(2, "0")}:00`;
 };
 
 const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
@@ -160,7 +196,7 @@ const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
         {/* Buttons */}
         <div className="mt-2 flex justify-between">
           <button onClick={onCancel} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm" type="button">Cancel</button>
-          <button onClick={() => onOk(partsToMySQL(selDate, selHour, selMinute, selAmpm))} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm" type="button">OK</button>
+          <button onClick={() => onOk(partsToMySQLUTC(selDate, selHour, selMinute, selAmpm))} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm" type="button">OK</button>
         </div>
       </div>
     </div>
@@ -223,6 +259,32 @@ const Branches = () => {
           console.error("Branches load error (GET):", err);
           enqueueSnackbar("Failed to load branches.", { variant: "error" });
         });
+    }
+  };
+
+  const handleUpdateBranchTime = async (b) => {
+    if (!b.opening_time || !b.closing_time) {
+      enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
+      return;
+    }
+
+    const open = new Date(b.opening_time);
+    const close = new Date(b.closing_time);
+
+    if (open >= close) {
+      enqueueSnackbar("Opening time must be before closing time", { variant: "error" });
+      return;
+    }
+
+    try {
+      await axios.put(`${API_URL}/branches/${b.id}/time`, {
+        opening_time: b.opening_time,
+        closing_time: b.closing_time,
+      });
+      enqueueSnackbar(`${b.sname} time updated successfully.`, { variant: "success" });
+    } catch (err) {
+      console.error("Time update error:", err);
+      enqueueSnackbar(`Failed to update times for ${b.sname}.`, { variant: "error" });
     }
   };
   
@@ -305,24 +367,18 @@ const Branches = () => {
   // Cancel inside dropdown: do not change branch value (just close)
   const onDateTimeCancel = () => closeDtDropdown();
 
-  // OK inside dropdown: set branch's datetime locally (MySQL format), do NOT call backend here.
-  // Use MdMoreTime button to persist both times in one request as you had before.
   const onDateTimeOk = (mysqlDatetime) => {
     const { field, index } = dtDropdown;
-    if (index === null || index === undefined) {
-      closeDtDropdown();
-      return;
-    }
+    if (index === null || index === undefined) return closeDtDropdown();
 
-    setBranches(prev => {
+    setBranches((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: mysqlDatetime };
       return updated;
     });
 
-    // Also update editedBranch if this row is being edited
     if (editIndex === index) {
-      setEditedBranch(prev => ({ ...prev, [field]: mysqlDatetime }));
+      setEditedBranch((prev) => ({ ...prev, [field]: mysqlDatetime }));
     }
 
     closeDtDropdown();
@@ -416,33 +472,7 @@ const Branches = () => {
                           <div className="flex justify-center gap-3">
 
                               <MdMoreTime
-                                onClick={async () => {
-                                  const b = branches[index];
-                                  if (!b.open_time || !b.close_time) {
-                                    enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
-                                    return;
-                                  }
-
-                                  // Convert to UTC dates
-                                  const openUTC = new Date(b.open_time + "Z"); // ensure UTC
-                                  const closeUTC = new Date(b.close_time + "Z");
-
-                                  if (openUTC >= closeUTC) {
-                                    enqueueSnackbar(`Opening time must be before closing time for ${b.sname}.`, { variant: "error" });
-                                    return;
-                                  }
-
-                                  try {
-                                    await axios.put(`${API_URL}/branches/${b.id}/time`, {
-                                      open_time: b.open_time,
-                                      close_time: b.close_time,
-                                    });
-                                    enqueueSnackbar(`${b.sname} time updated successfully.`, { variant: "success" });
-                                  } catch (err) {
-                                    console.error("Time update error:", err);
-                                    enqueueSnackbar(`Failed to update times for ${b.sname}.`, { variant: "error" });
-                                  }
-                                }}
+                                onClick={handleUpdateBranchTime}
                                 className="text-green-600 text-2xl cursor-pointer"
                               />
 
