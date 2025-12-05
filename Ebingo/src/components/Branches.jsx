@@ -451,15 +451,14 @@ const Branches = () => {
                                   const b = branches[index];
 
                                   // Validate presence of times
-                                  if (!b.opening_time || !b.closing_time) {
+                                  if (!b.open_time || !b.close_time) {
                                     enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
                                     return;
                                   }
 
-                                  // Convert to Date objects
-                                  const openDate = new Date(b.opening_time);
-                                  const closeDate = new Date(b.closing_time);
-
+                                  const openDate = new Date(b.open_time);
+                                  const closeDate = new Date(b.close_time);
+                                  
                                   if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) {
                                     enqueueSnackbar(`Invalid date format for ${b.sname}.`, { variant: "error" });
                                     return;
