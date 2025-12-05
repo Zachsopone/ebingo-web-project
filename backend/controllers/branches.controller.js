@@ -1,3 +1,6 @@
+import { db } from "../connect.js";
+
+
 export const getBranches = async (_req, res) => {
   try {
     const [rows] = await db.query(
@@ -6,34 +9,27 @@ export const getBranches = async (_req, res) => {
          sname,
          address,
          branchemail,
-         opening_time,
-         closing_time
+         opening_time AS open_time,
+         closing_time AS close_time
        FROM branches
        ORDER BY id DESC`
     );
-
-    // Return times as plain strings
-    const normalized = rows.map(r => ({
-      id: r.id,
-      sname: r.sname,
-      address: r.address,
-      branchemail: r.branchemail,
-      opening_time: r.opening_time,   // plain DATETIME string
-      closing_time: r.closing_time,   // plain DATETIME string
-    }));
-
-    res.status(200).json(normalized);
+    res.status(200).json(rows);
   } catch (error) {
     console.error("Error fetching branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
   }
 };
 
+
 export const getBranchesFiltered = async (req, res) => {
   try {
+    // Accept branch_id either from request body (frontend) OR from authenticated token (req.branch_id)
     const bodyBranchId = req.body?.branch_id;
-    const tokenBranchId = req.branch_id;
+    const tokenBranchId = req.branch_id; // set by auth.middleware if verifyUser was used
 
+    // Determine which branch id to use:
+    // Priority: explicit body.branch_id (frontend) → tokenBranchId (middleware) → undefined (no filter)
     const branchIdToUse = bodyBranchId ?? tokenBranchId ?? null;
 
     let query = `SELECT
@@ -41,8 +37,8 @@ export const getBranchesFiltered = async (req, res) => {
                    sname,
                    address,
                    branchemail,
-                   opening_time,
-                   closing_time
+                   opening_time AS open_time,
+                   closing_time AS close_time
                  FROM branches`;
     const params = [];
 
@@ -55,22 +51,12 @@ export const getBranchesFiltered = async (req, res) => {
 
     const [rows] = await db.query(query, params);
 
-    const normalized = rows.map(r => ({
-      id: r.id,
-      sname: r.sname,
-      address: r.address,
-      branchemail: r.branchemail,
-      opening_time: r.opening_time,  // plain DATETIME string
-      closing_time: r.closing_time,  // plain DATETIME string
-    }));
-
-    res.status(200).json(normalized);
+    res.status(200).json(rows);
   } catch (error) {
     console.error("Error fetching filtered branches:", error);
     res.status(500).json({ error: "Failed to fetch branches." });
   }
 };
-
 
 export const updateBranch = async (req, res) => {
   const { id } = req.params;
