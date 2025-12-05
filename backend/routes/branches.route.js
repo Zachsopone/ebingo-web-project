@@ -1,5 +1,5 @@
 import express from "express";
-import { getBranches, updateBranch, updateBranchTime, addBranch, deleteBranch, getBranchById, getBranchesFiltered, } from "../controllers/branches.controller.js";
+import { getBranches, updateBranch, updateBranchTime, addBranch, deleteBranch, getBranchById, getBranchesFiltered, getBranchStatus } from "../controllers/branches.controller.js";
 
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.put("/:id", updateBranch);       // PUT /branches/:id → update
 router.put("/:id/time", updateBranchTime);  // updates opening_time & closing_time only
 router.delete("/:id", deleteBranch);    // DELETE /branches/:id → delete
 router.get("/:id", getBranchById);
+router.get("/:id/status", getBranchStatus);
 
 export default router;
