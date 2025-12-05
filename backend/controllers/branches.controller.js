@@ -1,5 +1,10 @@
 import { db } from "../connect.js";
 
+const toLocalISOString = (date) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
 
 export const getBranches = async (_req, res) => {
   try {
@@ -250,7 +255,8 @@ export const getBranchStatus = async (req, res) => {
       if (now > closeTime) nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
     }
 
-    res.json({ isOpen, nextOpeningTime: nextOpeningTime.toISOString() });
+    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime) });
+
   } catch (err) {
     console.error("Branch status error:", err);
     res.status(500).json({ error: "Failed to get branch status" });
