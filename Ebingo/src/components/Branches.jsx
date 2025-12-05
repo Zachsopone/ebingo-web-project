@@ -450,38 +450,32 @@ const Branches = () => {
                                 onClick={async () => {
                                   const b = branches[index];
 
-                                  // Validate presence of times
-                                  if (!b.open_time || !b.close_time) {
-                                    enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
+                                  // Instead of strict null check, ensure user really selected a date
+                                  const hasOpen = b.open_time && !isNaN(new Date(b.open_time).getTime());
+                                  const hasClose = b.close_time && !isNaN(new Date(b.close_time).getTime());
+
+                                  if (!hasOpen || !hasClose) {
+                                    enqueueSnackbar(`Please set BOTH opening and closing time for ${b.sname} before saving.`, { variant: "warning" });
                                     return;
                                   }
 
                                   const openDate = new Date(b.open_time);
                                   const closeDate = new Date(b.close_time);
-                                  
-                                  if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) {
-                                    enqueueSnackbar(`Invalid date format for ${b.sname}.`, { variant: "error" });
-                                    return;
-                                  }
 
-                                  // Check if opening is after closing
                                   if (openDate > closeDate) {
-                                    enqueueSnackbar(`Opening time cannot be after closing time for ${b.sname}.`, { variant: "error" });
-                                    return;
+                                      enqueueSnackbar(`Opening time cannot be later than closing time for ${b.sname}`, { variant: "error" });
+                                      return;
                                   }
 
                                   try {
-                                    // Send times to backend
-                                    await axios.put(`${API_URL}/branches/${b.id}/time`, {
-                                      open_time: b.open_time,
-                                      close_time: b.close_time,
-                                    });
-
-                                    enqueueSnackbar(`${b.sname} times updated successfully.`, { variant: "success" });
-                                  } catch (err) {
-                                    console.error("Time update error:", err);
-                                    enqueueSnackbar(`Failed to update times for ${b.sname}.`, { variant: "error" });
-                                  }
+                                      await axios.put(`${API_URL}/branches/${b.id}/time`, {
+                                          open_time: b.open_time,
+                                          close_time: b.close_time,
+                                      });
+                                      enqueueSnackbar(`${b.sname} times updated successfully.`, { variant: "success" });
+                                  } catch {
+                                      enqueueSnackbar(`Failed to update times for ${b.sname}`, { variant: "error" });
+                                  } 
                                 }}
                                 className="text-green-600 text-2xl cursor-pointer"
                               />
