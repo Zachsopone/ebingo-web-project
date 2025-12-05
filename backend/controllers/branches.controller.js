@@ -206,4 +206,55 @@ export const getBranchById = async (req, res) => {
   }
 };
 
+// Check if branch is currently open
+export const getBranchStatus = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.execute(
+      "SELECT opening_time, closing_time FROM branches WHERE id = ?",
+      [id]
+    );
+
+    if (!rows.length) return res.status(404).json({ error: "Branch not found" });
+
+    const { opening_time, closing_time } = rows[0];
+
+    const now = new Date();
+
+    const openTime = new Date(opening_time);
+    const closeTime = new Date(closing_time);
+
+    let isOpen = false;
+    let nextOpeningTime = openTime;
+
+    // Handle overnight shift
+    if (closeTime < openTime) {
+      // Closing time is on the next day
+      const closeTimeNextDay = new Date(closeTime);
+      closeTimeNextDay.setDate(closeTimeNextDay.getDate() + 1);
+      if (now >= openTime && now <= closeTimeNextDay) {
+        isOpen = true;
+      } else if (now < openTime) {
+        nextOpeningTime = openTime;
+      } else {
+        // now > closeTimeNextDay
+        nextOpeningTime = new Date(openTime);
+        nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
+      }
+    } else {
+      // Normal same-day schedule
+      if (now >= openTime && now <= closeTime) isOpen = true;
+      else if (now < openTime) nextOpeningTime = openTime;
+      else nextOpeningTime = new Date(openTime);
+      // next opening is next day if already closed
+      if (now > closeTime) nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
+    }
+
+    res.json({ isOpen, nextOpeningTime: nextOpeningTime.toISOString() });
+  } catch (err) {
+    console.error("Branch status error:", err);
+    res.status(500).json({ error: "Failed to get branch status" });
+  }
+};
+
 export { addBranch, deleteBranch };
