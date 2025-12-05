@@ -211,7 +211,6 @@ export const getBranchById = async (req, res) => {
   }
 };
 
-// Check if branch is currently open
 export const getBranchStatus = async (req, res) => {
   const { id } = req.params;
   try {
@@ -225,13 +224,16 @@ export const getBranchStatus = async (req, res) => {
     const { opening_time, closing_time } = rows[0];
     const now = new Date();
 
-    // Extract only the hours and minutes from MySQL DATETIME
+    // --- LOG USER'S CURRENT DATE/TIME ---
+    console.log("User local login time:", now.toString());
+    console.log("User ISO login time:", now.toISOString());
+
+    // Extract hours and minutes from MySQL DATETIME
     const openHour = opening_time.getHours();
     const openMinute = opening_time.getMinutes();
     const closeHour = closing_time.getHours();
     const closeMinute = closing_time.getMinutes();
 
-    // Build today's opening and closing times
     const openToday = new Date(now);
     openToday.setHours(openHour, openMinute, 0, 0);
 
@@ -242,8 +244,7 @@ export const getBranchStatus = async (req, res) => {
     let nextOpeningTime = openToday;
 
     if (closeToday <= openToday) {
-      // Overnight shift
-      closeToday.setDate(closeToday.getDate() + 1);
+      closeToday.setDate(closeToday.getDate() + 1); // Overnight shift
     }
 
     if (now >= openToday && now <= closeToday) {
@@ -251,12 +252,10 @@ export const getBranchStatus = async (req, res) => {
     } else if (now < openToday) {
       nextOpeningTime = openToday;
     } else {
-      // now > closeToday, next opening is tomorrow
       nextOpeningTime = new Date(openToday);
       nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
     }
 
-    // Return local ISO string without "Z"
     const toLocalISOString = (date) => {
       const pad = (n) => String(n).padStart(2, "0");
       return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
@@ -268,6 +267,7 @@ export const getBranchStatus = async (req, res) => {
     res.status(500).json({ error: "Failed to get branch status" });
   }
 };
+
 
 
 export { addBranch, deleteBranch };
