@@ -6,21 +6,6 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Convert MySQL DATETIME "YYYY-MM-DD HH:MM:SS" to local JS Date
-const parseMySQLDatetimeLocal = (mysqlDatetime) => {
-  if (!mysqlDatetime) return null;
-  const s = String(mysqlDatetime).trim();
-  const [datePart, timePart] = s.split(" ");
-  if (!datePart || !timePart) return null;
-
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute, second] = timePart.split(":").map(Number);
-
-  if ([year, month, day, hour, minute, second].some(isNaN)) return null;
-
-  return new Date(year, month - 1, day, hour, minute, second);
-};
-
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = Cookies.get("accessToken");
   const [isOpen, setIsOpen] = useState(true);
@@ -45,25 +30,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       return;
     }
 
-    let interval;
-
     const checkBranchStatus = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
-        if (!data.opening_time || !data.closing_time) {
-          setIsOpen(false);
-          return;
-        }
-
         const now = new Date();
-        const openTime = parseMySQLDatetimeLocal(data.opening_time);
-        const closeTime = parseMySQLDatetimeLocal(data.closing_time);
+        const openTime = new Date(data.opening_time);
+        const closeTime = new Date(data.closing_time);
 
-        if (!openTime || !closeTime) {
-          setIsOpen(false);
-        } else {
-          setIsOpen(now >= openTime && now <= closeTime);
-        }
+        setIsOpen(now >= openTime && now <= closeTime);
       } catch (err) {
         console.error("Failed to fetch branch times:", err);
         setIsOpen(false);
@@ -73,12 +47,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     };
 
     checkBranchStatus();
-    interval = setInterval(checkBranchStatus, 5000);
+    const interval = setInterval(checkBranchStatus, 5000);
     return () => clearInterval(interval);
   }, [branchId, userRole]);
 
   if (!token) return <Navigate to="/" replace />;
-
   if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
 
   if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
