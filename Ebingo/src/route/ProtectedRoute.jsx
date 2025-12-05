@@ -6,13 +6,19 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Helper: parse MySQL DATETIME string into local JS Date
+// Convert MySQL DATETIME "YYYY-MM-DD HH:MM:SS" to local JS Date
 const parseMySQLDatetimeLocal = (mysqlDatetime) => {
   if (!mysqlDatetime) return null;
-  const [datePart, timePart] = mysqlDatetime.split(" ");
+  const s = String(mysqlDatetime).trim();
+  const [datePart, timePart] = s.split(" ");
+  if (!datePart || !timePart) return null;
+
   const [year, month, day] = datePart.split("-").map(Number);
   const [hour, minute, second] = timePart.split(":").map(Number);
-  return new Date(year, month - 1, day, hour, minute, second); // local time
+
+  if ([year, month, day, hour, minute, second].some(isNaN)) return null;
+
+  return new Date(year, month - 1, day, hour, minute, second);
 };
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -26,7 +32,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload.role?.toLowerCase();
+      userRole = payload.role.toLowerCase();
       branchId = payload.branch_id;
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -72,7 +78,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }, [branchId, userRole]);
 
   if (!token) return <Navigate to="/" replace />;
-  if (!allowedRoles?.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
+
+  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
+
   if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
     return <Navigate to="/closed" state={{ branchId }} replace />;
   }
@@ -80,7 +88,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-// ✅ Add proper PropTypes validation
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
   allowedRoles: PropTypes.arrayOf(PropTypes.string).isRequired,
