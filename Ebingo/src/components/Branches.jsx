@@ -1,3 +1,5 @@
+Branches.jsx:
+
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
@@ -426,8 +428,8 @@ const Branches = () => {
                       <td className="border border-black p-1">
                         <input
                           readOnly
-                          value={formatDateTimeDisplay(branch.opening_time)}
-                          onClick={(e) => { if (isEditing) return; openDtDropdown("opening_time", index, e);}}
+                          value={formatDateTimeDisplay(branch.open_time)}
+                          onClick={(e) => { if (isEditing) return; openDtDropdown("open_time", index, e);}}
                           className="w-38 border rounded cursor-pointer bg-white text-sm p-1"
                         />
                       </td>
@@ -436,8 +438,8 @@ const Branches = () => {
                       <td className="border border-black p-1">
                         <input
                           readOnly
-                          value={formatDateTimeDisplay(branch.closing_time)}
-                          onClick={(e) => { if (isEditing) return; openDtDropdown("closing_time", index, e);}}
+                          value={formatDateTimeDisplay(branch.close_time)}
+                          onClick={(e) => { if (isEditing) return; openDtDropdown("close_time", index, e);}}
                           className="w-38 border rounded cursor-pointer bg-white text-sm p-1"
                         />
                       </td>
