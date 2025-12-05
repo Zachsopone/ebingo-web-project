@@ -1,23 +1,9 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Convert MySQL DATETIME "YYYY-MM-DD HH:MM:SS" to local JS Date
-const parseMySQLDatetimeLocal = (mysqlDatetime) => {
-  if (!mysqlDatetime) return null;
-  const s = String(mysqlDatetime).trim();
-  const [datePart, timePart] = s.split(" ");
-  if (!datePart || !timePart) return null;
-
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute, second] = timePart.split(":").map(Number);
-
-  if ([year, month, day, hour, minute, second].some(isNaN)) return null;
-
-  return new Date(year, month - 1, day, hour, minute, second);
-};
 
 export default function ClosedPage() {
   const [timeLeft, setTimeLeft] = useState("");
@@ -29,25 +15,18 @@ export default function ClosedPage() {
   useEffect(() => {
     if (!branchId) return;
 
-    let interval;
-
     const updateTimer = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
         const now = new Date();
-
-        const openingTime = parseMySQLDatetimeLocal(data.opening_time);
-        const closingTime = parseMySQLDatetimeLocal(data.closing_time);
-
-        if (!openingTime || !closingTime) return;
+        const openingTime = new Date(data.opening_time);
+        const closingTime = new Date(data.closing_time);
 
         // Branch is open → redirect immediately
         if (now >= openingTime && now <= closingTime) {
-          const token = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("accessToken="));
+          const token = Cookies.get("accessToken");
           if (token) {
-            const payload = JSON.parse(atob(token.split("=")[1].split(".")[0] === "Bearer" ? token.split("=")[1].split(".")[1] : token.split("=")[1].split(".")[1]));
+            const payload = JSON.parse(atob(token.split(".")[1]));
             const role = payload.role.toLowerCase();
             if (role === "cashier") navigate("/cashier/members", { replace: true });
             else if (role === "guard") navigate("/guard", { replace: true });
@@ -55,16 +34,15 @@ export default function ClosedPage() {
           return;
         }
 
+        // Show countdown
         const diff = openingTime - now;
-
-        // If opening time is in the past → display fixed message
-        if (diff <= 0) {
-          setTimeLeft("");
-        } else {
+        if (diff > 0) {
           const h = Math.floor(diff / 1000 / 60 / 60);
           const m = Math.floor((diff / 1000 / 60) % 60);
           const s = Math.floor((diff / 1000) % 60);
           setTimeLeft(`${h}h ${m}m ${s}s`);
+        } else {
+          setTimeLeft("");
         }
 
         setOpeningTimeDisplay(
@@ -83,7 +61,7 @@ export default function ClosedPage() {
     };
 
     updateTimer();
-    interval = setInterval(updateTimer, 1000); // update every second
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [branchId, navigate]);
 
