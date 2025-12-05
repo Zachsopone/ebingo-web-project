@@ -223,44 +223,51 @@ export const getBranchStatus = async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: "Branch not found" });
 
     const { opening_time, closing_time } = rows[0];
-
     const now = new Date();
 
-    const openTime = new Date(opening_time);
-    const closeTime = new Date(closing_time);
+    // Extract only the hours and minutes from MySQL DATETIME
+    const openHour = opening_time.getHours();
+    const openMinute = opening_time.getMinutes();
+    const closeHour = closing_time.getHours();
+    const closeMinute = closing_time.getMinutes();
+
+    // Build today's opening and closing times
+    const openToday = new Date(now);
+    openToday.setHours(openHour, openMinute, 0, 0);
+
+    let closeToday = new Date(now);
+    closeToday.setHours(closeHour, closeMinute, 0, 0);
 
     let isOpen = false;
-    let nextOpeningTime = openTime;
+    let nextOpeningTime = openToday;
 
-    // Handle overnight shift
-    if (closeTime < openTime) {
-      // Closing time is on the next day
-      const closeTimeNextDay = new Date(closeTime);
-      closeTimeNextDay.setDate(closeTimeNextDay.getDate() + 1);
-      if (now >= openTime && now <= closeTimeNextDay) {
-        isOpen = true;
-      } else if (now < openTime) {
-        nextOpeningTime = openTime;
-      } else {
-        // now > closeTimeNextDay
-        nextOpeningTime = new Date(openTime);
-        nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
-      }
-    } else {
-      // Normal same-day schedule
-      if (now >= openTime && now <= closeTime) isOpen = true;
-      else if (now < openTime) nextOpeningTime = openTime;
-      else nextOpeningTime = new Date(openTime);
-      // next opening is next day if already closed
-      if (now > closeTime) nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
+    if (closeToday <= openToday) {
+      // Overnight shift
+      closeToday.setDate(closeToday.getDate() + 1);
     }
 
-    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime) });
+    if (now >= openToday && now <= closeToday) {
+      isOpen = true;
+    } else if (now < openToday) {
+      nextOpeningTime = openToday;
+    } else {
+      // now > closeToday, next opening is tomorrow
+      nextOpeningTime = new Date(openToday);
+      nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
+    }
 
+    // Return local ISO string without "Z"
+    const toLocalISOString = (date) => {
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    };
+
+    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime) });
   } catch (err) {
     console.error("Branch status error:", err);
     res.status(500).json({ error: "Failed to get branch status" });
   }
 };
+
 
 export { addBranch, deleteBranch };
