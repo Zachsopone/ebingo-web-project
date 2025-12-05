@@ -222,34 +222,43 @@ export const getBranchStatus = async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: "Branch not found" });
 
     const { opening_time, closing_time } = rows[0];
-    const now = new Date();
 
-    // --- LOG USER'S CURRENT DATE/TIME ---
-    console.log("User local login time:", now.toString());
-    console.log("User ISO login time:", now.toISOString());
+    // --- USER'S CURRENT UTC TIME ---
+    const nowUTC = new Date();
+    console.log("User UTC login time:", nowUTC.toISOString());
 
-    // Extract hours and minutes from MySQL DATETIME
-    const openHour = opening_time.getHours();
-    const openMinute = opening_time.getMinutes();
-    const closeHour = closing_time.getHours();
-    const closeMinute = closing_time.getMinutes();
+    // --- CONVERT DATABASE TIME TO PHILIPPINE TIME (UTC+8) ---
+    const convertToManila = (date) => {
+      const utc = new Date(date);
+      // Manila is UTC+8
+      const manilaTime = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
+      return manilaTime;
+    };
 
-    const openToday = new Date(now);
-    openToday.setHours(openHour, openMinute, 0, 0);
+    const openManila = convertToManila(opening_time);
+    const closeManila = convertToManila(closing_time);
 
-    let closeToday = new Date(now);
-    closeToday.setHours(closeHour, closeMinute, 0, 0);
+    console.log("Opening time Manila:", openManila.toString());
+    console.log("Closing time Manila:", closeManila.toString());
+
+    // Build today's opening and closing times
+    const openToday = new Date(nowUTC);
+    openToday.setHours(openManila.getHours(), openManila.getMinutes(), 0, 0);
+
+    let closeToday = new Date(nowUTC);
+    closeToday.setHours(closeManila.getHours(), closeManila.getMinutes(), 0, 0);
 
     let isOpen = false;
     let nextOpeningTime = openToday;
 
     if (closeToday <= openToday) {
-      closeToday.setDate(closeToday.getDate() + 1); // Overnight shift
+      // Overnight shift
+      closeToday.setDate(closeToday.getDate() + 1);
     }
 
-    if (now >= openToday && now <= closeToday) {
+    if (nowUTC >= openToday && nowUTC <= closeToday) {
       isOpen = true;
-    } else if (now < openToday) {
+    } else if (nowUTC < openToday) {
       nextOpeningTime = openToday;
     } else {
       nextOpeningTime = new Date(openToday);
@@ -267,6 +276,7 @@ export const getBranchStatus = async (req, res) => {
     res.status(500).json({ error: "Failed to get branch status" });
   }
 };
+
 
 
 
