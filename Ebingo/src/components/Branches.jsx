@@ -7,13 +7,25 @@ import Cookies from "js-cookie";
 import { MdOutlineEdit, MdSave, MdCancel, MdDeleteOutline, MdMoreTime } from "react-icons/md";
 import { useSnackbar } from "notistack";
 
-// Convert MySQL DATETIME string to local JS Date
-const parseMySQLDatetimeLocal = (mysqlDatetime) => {
+const parseBackendDatetimeUTC = (mysqlDatetime) => {
   if (!mysqlDatetime) return null;
-  const [datePart, timePart] = mysqlDatetime.split(" ");
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute, second] = timePart.split(":").map(Number);
-  return new Date(year, month - 1, day, hour, minute, second); // local time
+  let s = mysqlDatetime.replace(" ", "T");
+
+  const match = s.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/
+  );
+
+  if (!match) return null;
+
+  const [, yy, mm, dd, hh, min] = match;
+
+  return {
+    year: Number(yy),
+    month: Number(mm),
+    day: Number(dd),
+    hour: Number(hh),
+    minute: Number(min),
+  };
 };
 
 // Convert 24h → 12h
@@ -30,16 +42,23 @@ const to12HourParts = (hour24, minute) => {
 // FIXED READ-ONLY DISPLAY
 const formatDateTimeDisplay = (mysqlDatetime) => {
   if (!mysqlDatetime) return "";
-  const dt = parseMySQLDatetimeLocal(mysqlDatetime);
-  if (!dt) return "";
-  return dt.toLocaleString([], { 
-    year: "numeric",
+
+  const p = parseBackendDatetimeUTC(mysqlDatetime);
+  if (!p) return "";
+
+  // Build pure UTC date for formatting only date portion
+  const utcDate = new Date(Date.UTC(p.year, p.month - 1, p.day));
+
+  const dateStr = utcDate.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true 
+    year: "numeric",
+    timeZone: "UTC",
   });
+
+  const { hour, minute, ampm } = to12HourParts(p.hour, p.minute);
+
+  return `${dateStr} • ${hour}:${minute} ${ampm}`;
 };
 
 // FIXED DROPDOWN PRE-SELECT
@@ -53,7 +72,7 @@ const mysqlToParts = (mysqlDatetime) => {
     return { date: `${y}-${m}-${d}`, hour, minute, ampm };
   }
 
-  const p = parseMySQLDatetimeLocal(mysqlDatetime);
+  const p = parseBackendDatetimeUTC(mysqlDatetime);
   if (!p) return mysqlToParts(null);
 
   const date = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
@@ -64,22 +83,17 @@ const mysqlToParts = (mysqlDatetime) => {
 
 
 // Convert parts to MySQL DATETIME string (local)
-const partsToMySQLUTC = (dateStr, hourStr, minuteStr, ampm) => {
+const partsToMySQL = (dateStr, hourStr, minuteStr, ampm) => {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-").map(Number);
   let hour = parseInt(hourStr, 10);
+
   if (ampm === "PM" && hour !== 12) hour += 12;
   if (ampm === "AM" && hour === 12) hour = 0;
 
-  // Create a local Date first
-  const localDate = new Date(y, m - 1, d, hour, parseInt(minuteStr, 10), 0);
-  // Convert to UTC string for MySQL
-  const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-  return `${utcDate.getFullYear()}-${String(utcDate.getMonth() + 1).padStart(2, "0")}-${String(
-    utcDate.getDate()
-  ).padStart(2, "0")} ${String(utcDate.getHours()).padStart(2, "0")}:${String(
-    utcDate.getMinutes()
-  ).padStart(2, "0")}:00`;
+  const dt = new Date(y, m - 1, d, hour, parseInt(minuteStr, 10), 0);
+
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}:00`;
 };
 
 const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
@@ -177,7 +191,7 @@ const DateTimeDropdown = ({ initialDatetime, onCancel, onOk, onClose }) => {
         {/* Buttons */}
         <div className="mt-2 flex justify-between">
           <button onClick={onCancel} className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm" type="button">Cancel</button>
-          <button onClick={() => onOk(partsToMySQLUTC(selDate, selHour, selMinute, selAmpm))} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm" type="button">OK</button>
+          <button onClick={() => onOk(partsToMySQL(selDate, selHour, selMinute, selAmpm))} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm" type="button">OK</button>
         </div>
       </div>
     </div>
@@ -322,9 +336,14 @@ const Branches = () => {
   // Cancel inside dropdown: do not change branch value (just close)
   const onDateTimeCancel = () => closeDtDropdown();
 
+  // OK inside dropdown: set branch's datetime locally (MySQL format), do NOT call backend here.
+  // Use MdMoreTime button to persist both times in one request as you had before.
   const onDateTimeOk = (mysqlDatetime) => {
     const { field, index } = dtDropdown;
-    if (index === null || index === undefined) { closeDtDropdown(); return; }
+    if (index === null || index === undefined) {
+      closeDtDropdown();
+      return;
+    }
 
     setBranches(prev => {
       const updated = [...prev];
@@ -332,6 +351,7 @@ const Branches = () => {
       return updated;
     });
 
+    // Also update editedBranch if this row is being edited
     if (editIndex === index) {
       setEditedBranch(prev => ({ ...prev, [field]: mysqlDatetime }));
     }
@@ -344,32 +364,6 @@ const Branches = () => {
     const containerBox = containerRef.current.getBoundingClientRect();
     const anchor = dtDropdown.anchorRect;
     return { position: "absolute", top: anchor.bottom - containerBox.top + 4, left: anchor.left - containerBox.left, zIndex: 9999 };
-  };
-
-  const handleUpdateTime = async (branch) => {
-    const openTime = parseMySQLDatetimeLocal(branch.open_time);
-    const closeTime = parseMySQLDatetimeLocal(branch.close_time);
-
-    if (!openTime || !closeTime) {
-      enqueueSnackbar("Please set both opening and closing time.", { variant: "warning" });
-      return;
-    }
-
-    if (openTime >= closeTime) {
-      enqueueSnackbar("Opening time must be before closing time.", { variant: "error" });
-      return;
-    }
-
-    try {
-      await axios.put(`${API_URL}/branches/${branch.id}/time`, {
-        open_time: branch.open_time,
-        close_time: branch.close_time
-      });
-      enqueueSnackbar(`${branch.sname} time updated successfully.`, { variant: "success" });
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Failed to update branch times.", { variant: "error" });
-    }
   };
 
   return (
@@ -453,7 +447,33 @@ const Branches = () => {
                           <div className="flex justify-center gap-3">
 
                               <MdMoreTime
-                                onClick={() => handleUpdateTime(branch)}
+                                onClick={async () => {
+                                  const b = branches[index];
+                                  if (!b.open_time || !b.close_time) {
+                                    enqueueSnackbar(`Please set both opening and closing time for ${b.sname}.`, { variant: "warning" });
+                                    return;
+                                  }
+
+                                  // Convert to UTC dates
+                                  const openUTC = new Date(b.open_time + "Z"); // ensure UTC
+                                  const closeUTC = new Date(b.close_time + "Z");
+
+                                  if (openUTC >= closeUTC) {
+                                    enqueueSnackbar(`Opening time must be before closing time for ${b.sname}.`, { variant: "error" });
+                                    return;
+                                  }
+
+                                  try {
+                                    await axios.put(`${API_URL}/branches/${b.id}/time`, {
+                                      open_time: b.open_time,
+                                      close_time: b.close_time,
+                                    });
+                                    enqueueSnackbar(`${b.sname} time updated successfully.`, { variant: "success" });
+                                  } catch (err) {
+                                    console.error("Time update error:", err);
+                                    enqueueSnackbar(`Failed to update times for ${b.sname}.`, { variant: "error" });
+                                  }
+                                }}
                                 className="text-green-600 text-2xl cursor-pointer"
                               />
 
