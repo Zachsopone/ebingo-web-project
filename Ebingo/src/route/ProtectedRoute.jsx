@@ -1,4 +1,6 @@
-import { Navigate} from "react-router-dom";
+// 🔥 FIXED ProtectedRoute.jsx — accurate branch time access control
+
+import { Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
@@ -8,23 +10,30 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = Cookies.get("accessToken");
-  const [isOpen, setIsOpen] = useState(true); // assume open by default
+
+  const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
   let userRole = null;
   let branchId = null;
 
+  // Extract role + branch from token
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload.role.toLowerCase();
+      userRole = payload.role?.toLowerCase();
       branchId = payload.branch_id;
-    } catch (error) {
-      console.error("Failed to decode token:", error);
+    } catch (err) {
+      console.error("❌ JWT decode failed", err);
     }
   }
 
-  // For cashier and guard: check branch status periodically
+  // Convert MySQL stored datetime into LOCAL time safely
+  const toLocalTime = (datetime) => {
+    return new Date(datetime.replace("Z", ""));  // Prevent forced UTC offset
+  };
+
+  // 🕒 Check branch allowed time
   useEffect(() => {
     if (!branchId || !["cashier", "guard"].includes(userRole)) {
       setLoading(false);
@@ -32,40 +41,48 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     let interval;
-    const checkBranchStatus = async () => {
+    const checkBranchTime = async () => {
       try {
         const { data } = await axios.get(`${API_URL}/branches/${branchId}`);
+
         if (!data.opening_time || !data.closing_time) {
           setIsOpen(false);
+          setLoading(false);
           return;
         }
 
         const now = new Date();
-        const openTime = new Date(data.opening_time + "Z"); // treat as UTC
-        const closeTime = new Date(data.closing_time + "Z");
+        const openTime = toLocalTime(data.opening_time);
+        const closeTime = toLocalTime(data.closing_time);
 
-        setIsOpen(now >= openTime && now <= closeTime);
-      } catch (err) {
-        console.error("Failed to fetch branch times:", err);
-      } finally {
-        setLoading(false);
+        // ⏳ System open only within the window
+        const accessAllowed = now >= openTime && now <= closeTime;
+
+        setIsOpen(accessAllowed);
+      } catch (e) {
+        console.error("🔥 Branch time fetch failed", e);
       }
+      setLoading(false);
     };
 
-    checkBranchStatus();
-    interval = setInterval(checkBranchStatus, 5000); // check every 5 seconds
+    checkBranchTime();
+    interval = setInterval(checkBranchTime, 5000); // automatic periodic validation
+
     return () => clearInterval(interval);
-  }, [branchId, userRole]);
+  }, [userRole, branchId]);
 
-  if (!token) return <Navigate to="/" replace />; // no token
-  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />; // not authorized
+  // ⛔ No token → login page
+  if (!token) return <Navigate to="/" replace />;
 
-  // Redirect to closed page if branch is closed
+  // Role mismatch → redirect to user's page
+  if (!allowedRoles.includes(userRole)) return <Navigate to={`/${userRole}`} replace />;
+
+  // Cashier/Guard trying to access outside business hours → ClosedPage
   if (["cashier", "guard"].includes(userRole) && !loading && !isOpen) {
     return <Navigate to="/closed" state={{ branchId }} replace />;
   }
 
-  return children; // render children if all checks passed
+  return children;
 };
 
 ProtectedRoute.propTypes = {
