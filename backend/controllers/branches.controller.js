@@ -223,42 +223,35 @@ export const getBranchStatus = async (req, res) => {
 
     const { opening_time, closing_time } = rows[0];
 
-    // --- USER'S CURRENT UTC TIME ---
+    // --- CONVERT USER'S CURRENT TIME TO MANILA TIME (UTC+8) ---
     const nowUTC = new Date();
-    console.log("User UTC login time:", nowUTC.toISOString());
+    const now = new Date(nowUTC.getTime() + 8 * 60 * 60 * 1000); // Manila is UTC+8
 
-    // --- CONVERT DATABASE TIME TO PHILIPPINE TIME (UTC+8) ---
-    const convertToManila = (date) => {
-      const utc = new Date(date);
-      // Manila is UTC+8
-      const manilaTime = new Date(utc.getTime() + 8 * 60 * 60 * 1000);
-      return manilaTime;
-    };
+    console.log("User Manila login time:", now.toString());
+    console.log("User Manila ISO login time:", now.toISOString());
 
-    const openManila = convertToManila(opening_time);
-    const closeManila = convertToManila(closing_time);
+    // Extract hours and minutes from MySQL DATETIME (already Manila time)
+    const openHour = opening_time.getHours();
+    const openMinute = opening_time.getMinutes();
+    const closeHour = closing_time.getHours();
+    const closeMinute = closing_time.getMinutes();
 
-    console.log("Opening time Manila:", openManila.toString());
-    console.log("Closing time Manila:", closeManila.toString());
+    const openToday = new Date(now);
+    openToday.setHours(openHour, openMinute, 0, 0);
 
-    // Build today's opening and closing times
-    const openToday = new Date(nowUTC);
-    openToday.setHours(openManila.getHours(), openManila.getMinutes(), 0, 0);
-
-    let closeToday = new Date(nowUTC);
-    closeToday.setHours(closeManila.getHours(), closeManila.getMinutes(), 0, 0);
+    let closeToday = new Date(now);
+    closeToday.setHours(closeHour, closeMinute, 0, 0);
 
     let isOpen = false;
     let nextOpeningTime = openToday;
 
     if (closeToday <= openToday) {
-      // Overnight shift
-      closeToday.setDate(closeToday.getDate() + 1);
+      closeToday.setDate(closeToday.getDate() + 1); // Overnight shift
     }
 
-    if (nowUTC >= openToday && nowUTC <= closeToday) {
+    if (now >= openToday && now <= closeToday) {
       isOpen = true;
-    } else if (nowUTC < openToday) {
+    } else if (now < openToday) {
       nextOpeningTime = openToday;
     } else {
       nextOpeningTime = new Date(openToday);
