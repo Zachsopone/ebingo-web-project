@@ -90,41 +90,38 @@ export const updateBranchTime = async (req, res) => {
   const { open_time, close_time } = req.body;
 
   try {
-    // --- Convert ISO → Manila → MySQL DATETIME format ---
-    const toMySQLDateTimeManila = (iso) => {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) throw new Error("Invalid datetime format received");
+    // Converts ISO → MySQL DATETIME (without timezone shifting)
+    const toMySQLFormat = (iso) => {
+      if (typeof iso !== "string" || !iso.includes("T")) {
+        throw new Error("Invalid datetime format provided.");
+      }
 
-      // Convert UTC → Asia/Manila (UTC + 8 hours)
-      const manila = new Date(d.getTime() + (8 * 60 * 60 * 1000));
-
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${manila.getFullYear()}-${pad(manila.getMonth()+1)}-${pad(manila.getDate())} ` +
-             `${pad(manila.getHours())}:${pad(manila.getMinutes())}:00`; // seconds fixed to :00
+      const clean = iso.replace("T", " ").replace("Z", ""); // remove T and Z
+      return clean.split(".")[0]; // remove milliseconds → 2025-12-07 00:00:00
     };
 
-    const formattedOpen = toMySQLDateTimeManila(open_time);
-    const formattedClose = toMySQLDateTimeManila(close_time);
+    const formattedOpen = toMySQLFormat(open_time);
+    const formattedClose = toMySQLFormat(close_time);
 
-    console.log("Saving to database:", { formattedOpen, formattedClose });
+    console.log("Saving schedule values:", { formattedOpen, formattedClose });
 
-    // --- Save into DB ---
     const [result] = await db.execute(
-      `UPDATE branches SET opening_time = ?, closing_time = ? WHERE id = ?`,
+      "UPDATE branches SET opening_time=?, closing_time=? WHERE id=?",
       [formattedOpen, formattedClose, id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Branch not found." });
+      return res.status(404).json({ error: "Branch ID not found." });
     }
 
     return res.json({ success: true, message: "Branch schedule updated successfully!" });
 
   } catch (err) {
-    console.error("Update schedule error:", err);
+    console.error("Branch schedule update error:", err.message);
     return res.status(500).json({ error: "Failed to update schedule: " + err.message });
   }
 };
+
 
 
 const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
