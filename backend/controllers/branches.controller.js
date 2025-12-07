@@ -89,10 +89,6 @@ export const updateBranchTime = async (req, res) => {
   const { id } = req.params;
   const { open_time, close_time } = req.body;
 
-  if (!open_time || !close_time) {
-    return res.status(400).json({ error: "Both open_time and close_time are required" });
-  }
-
   try {
     await db.execute(
       `UPDATE branches SET 
@@ -102,7 +98,7 @@ export const updateBranchTime = async (req, res) => {
       [open_time, close_time, id]
     );
 
-    res.json({ success: true, message: "Branch times updated successfully." });
+    res.json({ success: true, message: "Branch schedule updated successfully." });
   } catch (err) {
     console.error("Update time error:", err);
     res.status(500).json({ error: "Database update failed" });
