@@ -87,57 +87,45 @@ export const updateBranch = async (req, res) => {
 
 export const updateBranchTime = async (req, res) => {
   const { id } = req.params;
-
-  const parseToDate = (val) => {
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    if (typeof val !== "string") return null;
-
-    const mysqlLike = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
-    const m = val.match(mysqlLike);
-    if (m) {
-      const [, yy, mm, dd, hh, min, ss] = m.map(Number);
-      return new Date(yy, mm - 1, dd, hh, min, ss);
-    }
-
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d;
-
-    return null;
-  };
-
-  // Helper: format JS Date -> "YYYY-MM-DD HH:MM:SS" (no timezone designator)
-  const formatToMySQL = (date) => {
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  };
+  const { open_time, close_time } = req.body;
 
   try {
-    const openDate = parseToDate(payloadOpen);
-    const closeDate = parseToDate(payloadClose);
+    // --- Convert ISO → Manila → MySQL DATETIME format ---
+    const toMySQLDateTimeManila = (iso) => {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) throw new Error("Invalid datetime format received");
 
-    if (!openDate || !closeDate) {
-      return res.status(400).json({ error: "Invalid date format for open_time or close_time" });
-    }
+      // Convert UTC → Asia/Manila (UTC + 8 hours)
+      const manila = new Date(d.getTime() + (8 * 60 * 60 * 1000));
 
-    const openStr = formatToMySQL(openDate);
-    const closeStr = formatToMySQL(closeDate);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${manila.getFullYear()}-${pad(manila.getMonth()+1)}-${pad(manila.getDate())} ` +
+             `${pad(manila.getHours())}:${pad(manila.getMinutes())}:00`; // seconds fixed to :00
+    };
 
-    await db.execute(
-      `UPDATE branches SET 
-         opening_time = ?, 
-         closing_time = ?
-       WHERE id = ?`,
-      [openStr, closeStr, id]
+    const formattedOpen = toMySQLDateTimeManila(open_time);
+    const formattedClose = toMySQLDateTimeManila(close_time);
+
+    console.log("Saving to database:", { formattedOpen, formattedClose });
+
+    // --- Save into DB ---
+    const [result] = await db.execute(
+      `UPDATE branches SET opening_time = ?, closing_time = ? WHERE id = ?`,
+      [formattedOpen, formattedClose, id]
     );
 
-    return res.json({ success: true, message: "Branch times updated successfully." });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Branch not found." });
+    }
+
+    return res.json({ success: true, message: "Branch schedule updated successfully!" });
+
   } catch (err) {
-    // Log full error for debugging
-    console.error("Update time error:", err);
-    return res.status(500).json({ error: "Database update failed" });
+    console.error("Update schedule error:", err);
+    return res.status(500).json({ error: "Failed to update schedule: " + err.message });
   }
 };
+
 
 const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
