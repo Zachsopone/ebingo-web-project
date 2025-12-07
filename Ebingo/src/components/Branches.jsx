@@ -450,15 +450,6 @@ const Branches = () => {
                                 onClick={async () => {
                                   const b = branches[index];
 
-                                  // Instead of strict null check, ensure user really selected a date
-                                  const hasOpen = b.open_time && !isNaN(new Date(b.open_time).getTime());
-                                  const hasClose = b.close_time && !isNaN(new Date(b.close_time).getTime());
-
-                                  if (!hasOpen || !hasClose) {
-                                    enqueueSnackbar(`Please set BOTH opening and closing time for ${b.sname} before saving.`, { variant: "warning" });
-                                    return;
-                                  }
-
                                   const openDate = new Date(b.open_time);
                                   const closeDate = new Date(b.close_time);
 
@@ -468,11 +459,11 @@ const Branches = () => {
                                   }
 
                                   try {
-                                      await axios.put(`${API_URL}/branches/${b.id}/time`, {
-                                          open_time: b.open_time,
-                                          close_time: b.close_time,
-                                      });
-                                      enqueueSnackbar(`${b.sname} times updated successfully.`, { variant: "success" });
+                                    const res = await axios.put(`${API_URL}/branches/${b.id}/time`, {
+                                      open_time: b.open_time,
+                                      close_time: b.close_time,
+                                    });
+                                      enqueueSnackbar(res.data.message, { variant: "success" });
                                   } catch {
                                       enqueueSnackbar(`Failed to update times for ${b.sname}`, { variant: "error" });
                                   } 
