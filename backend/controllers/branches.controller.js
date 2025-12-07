@@ -87,21 +87,55 @@ export const updateBranch = async (req, res) => {
 
 export const updateBranchTime = async (req, res) => {
   const { id } = req.params;
-  const { open_time, close_time } = req.body;
+
+  const parseToDate = (val) => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    if (typeof val !== "string") return null;
+
+    const mysqlLike = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+    const m = val.match(mysqlLike);
+    if (m) {
+      const [, yy, mm, dd, hh, min, ss] = m.map(Number);
+      return new Date(yy, mm - 1, dd, hh, min, ss);
+    }
+
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d;
+
+    return null;
+  };
+
+  // Helper: format JS Date -> "YYYY-MM-DD HH:MM:SS" (no timezone designator)
+  const formatToMySQL = (date) => {
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  };
 
   try {
+    const openDate = parseToDate(payloadOpen);
+    const closeDate = parseToDate(payloadClose);
+
+    if (!openDate || !closeDate) {
+      return res.status(400).json({ error: "Invalid date format for open_time or close_time" });
+    }
+
+    const openStr = formatToMySQL(openDate);
+    const closeStr = formatToMySQL(closeDate);
+
     await db.execute(
       `UPDATE branches SET 
-        opening_time = ?, 
-        closing_time = ?
-      WHERE id = ?`,
-      [open_time, close_time, id]
+         opening_time = ?, 
+         closing_time = ?
+       WHERE id = ?`,
+      [openStr, closeStr, id]
     );
 
-    res.json({ success: true, message: "Branch schedule updated successfully." });
+    return res.json({ success: true, message: "Branch times updated successfully." });
   } catch (err) {
+    // Log full error for debugging
     console.error("Update time error:", err);
-    res.status(500).json({ error: "Database update failed" });
+    return res.status(500).json({ error: "Database update failed" });
   }
 };
 
