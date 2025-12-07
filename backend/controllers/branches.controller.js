@@ -90,39 +90,51 @@ export const updateBranchTime = async (req, res) => {
   const { open_time, close_time } = req.body;
 
   try {
-    // Converts ISO → MySQL DATETIME (without timezone shifting)
-    const toMySQLFormat = (iso) => {
-      if (typeof iso !== "string" || !iso.includes("T")) {
-        throw new Error("Invalid datetime format provided.");
+    // Convert ISO (2025-12-07T00:00:00.000Z) → MySQL DATETIME (2025-12-07 00:00:00)
+    const toMySQLDateTime = (isoString) => {
+      if (typeof isoString !== "string") {
+        throw new Error("Invalid datetime format received");
       }
 
-      const clean = iso.replace("T", " ").replace("Z", ""); // remove T and Z
-      return clean.split(".")[0]; // remove milliseconds → 2025-12-07 00:00:00
+      const cleaned = isoString.replace("T", " ").replace("Z", "").split(".")[0];
+      const d = new Date(cleaned);
+
+      if (isNaN(d.getTime())) throw new Error("Invalid datetime format received");
+
+      // Format cleanly for MySQL yyyy-MM-dd HH:mm:ss (no timezone conversion)
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+             `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     };
 
-    const formattedOpen = toMySQLFormat(open_time);
-    const formattedClose = toMySQLFormat(close_time);
+    const formattedOpen = toMySQLDateTime(open_time);
+    const formattedClose = toMySQLDateTime(close_time);
 
-    console.log("Saving schedule values:", { formattedOpen, formattedClose });
+    console.log("Saving branch schedule:", {
+      id, formattedOpen, formattedClose
+    });
 
     const [result] = await db.execute(
-      "UPDATE branches SET opening_time=?, closing_time=? WHERE id=?",
+      `UPDATE branches SET opening_time = ?, closing_time = ? WHERE id = ?`,
       [formattedOpen, formattedClose, id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Branch ID not found." });
+      return res.status(404).json({ error: "Branch not found" });
     }
 
-    return res.json({ success: true, message: "Branch schedule updated successfully!" });
+    return res.json({
+      success: true,
+      message: "Branch schedule updated successfully!"
+    });
 
   } catch (err) {
-    console.error("Branch schedule update error:", err.message);
-    return res.status(500).json({ error: "Failed to update schedule: " + err.message });
+    console.error("Update schedule error:", err.message);
+    return res.status(500).json({
+      error: "Failed to update schedule: " + err.message
+    });
   }
 };
-
-
 
 const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
