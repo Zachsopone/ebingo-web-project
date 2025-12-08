@@ -21,6 +21,7 @@ export default function ClosedPage() {
         const now = new Date();
         const nextOpening = new Date(data.nextOpeningTime);
 
+        // Branch is open → redirect user
         if (data.isOpen) {
           const token = Cookies.get("accessToken");
           if (token) {
@@ -32,23 +33,36 @@ export default function ClosedPage() {
           return;
         }
 
-        if (!data.openingPassed) {
-          // Opening in the future → show countdown
-          const diff = nextOpening - now;
-          const h = Math.floor(diff / 1000 / 60 / 60);
-          const m = Math.floor((diff / 1000 / 60) % 60);
-          const s = Math.floor((diff / 1000) % 60);
-          setTimeLeft(`${h}h ${m}m ${s}s`);
-          setOpeningTimeDisplay(nextOpening.toLocaleString([], {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true
-          }));
+        // Calculate full time left until next opening
+        const diff = nextOpening - now; // milliseconds
+        if (diff > 0) {
+          const totalSeconds = Math.floor(diff / 1000);
+          const days = Math.floor(totalSeconds / (3600 * 24));
+          const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+
+          let timeString = "";
+          if (days > 0) timeString += `${days}d `;
+          if (hours > 0 || days > 0) timeString += `${hours}h `;
+          if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}m `;
+          timeString += `${seconds}s`;
+
+          setTimeLeft(timeString);
+
+          // Display next opening date & time in friendly format
+          setOpeningTimeDisplay(
+            nextOpening.toLocaleString([], {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+          );
         } else {
-          // Opening already passed → show admin-set message
+          // If somehow nextOpening is past, show admin-set message
           setTimeLeft("");
           setOpeningTimeDisplay("the time admin sets for opening and closing");
         }
