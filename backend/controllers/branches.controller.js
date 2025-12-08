@@ -223,37 +223,39 @@ export const getBranchStatus = async (req, res) => {
 
     const { opening_time, closing_time } = rows[0];
 
-    // --- CONVERT USER'S CURRENT TIME TO MANILA TIME (UTC+8) ---
+    // --- Current time in Manila ---
     const nowUTC = new Date();
-    const now = new Date(nowUTC.getTime() + 8 * 60 * 60 * 1000); // Manila is UTC+8
+    const now = new Date(nowUTC.getTime() + 8 * 60 * 60 * 1000);
 
-    console.log("User Manila login time:", now.toString());
-    console.log("User Manila ISO login time:", now.toISOString());
-
-    // Extract hours and minutes from MySQL DATETIME (already Manila time)
+    // Extract hours and minutes
     const openHour = opening_time.getHours();
     const openMinute = opening_time.getMinutes();
     const closeHour = closing_time.getHours();
     const closeMinute = closing_time.getMinutes();
 
+    // Today's opening and closing
     const openToday = new Date(now);
     openToday.setHours(openHour, openMinute, 0, 0);
 
     let closeToday = new Date(now);
     closeToday.setHours(closeHour, closeMinute, 0, 0);
 
+    // Handle overnight shifts
+    if (closeToday <= openToday) closeToday.setDate(closeToday.getDate() + 1);
+
     let isOpen = false;
     let nextOpeningTime = openToday;
-
-    if (closeToday <= openToday) {
-      closeToday.setDate(closeToday.getDate() + 1); // Overnight shift
-    }
+    let openingPassed = false;
 
     if (now >= openToday && now <= closeToday) {
-      isOpen = true;
+      isOpen = true; // branch currently open
     } else if (now < openToday) {
+      // opening today is still in future → show countdown
       nextOpeningTime = openToday;
     } else {
+      // now > closeToday → opening already passed
+      openingPassed = true;
+      // next opening could be tomorrow
       nextOpeningTime = new Date(openToday);
       nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
     }
@@ -263,14 +265,11 @@ export const getBranchStatus = async (req, res) => {
       return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     };
 
-    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime) });
+    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime), openingPassed });
   } catch (err) {
     console.error("Branch status error:", err);
     res.status(500).json({ error: "Failed to get branch status" });
   }
 };
-
-
-
 
 export { addBranch, deleteBranch };
