@@ -223,49 +223,43 @@ export const getBranchStatus = async (req, res) => {
 
     const { opening_time, closing_time } = rows[0];
 
-    // --- Current time in Manila ---
+    // Current time in Manila (UTC+8)
     const nowUTC = new Date();
     const now = new Date(nowUTC.getTime() + 8 * 60 * 60 * 1000);
 
-    // Extract hours and minutes
-    const openHour = opening_time.getHours();
-    const openMinute = opening_time.getMinutes();
-    const closeHour = closing_time.getHours();
-    const closeMinute = closing_time.getMinutes();
-
-    // Today's opening and closing
+    // Build today's opening and closing based on the stored hours and minutes
     const openToday = new Date(now);
-    openToday.setHours(openHour, openMinute, 0, 0);
+    openToday.setHours(opening_time.getHours(), opening_time.getMinutes(), 0, 0);
 
     let closeToday = new Date(now);
-    closeToday.setHours(closeHour, closeMinute, 0, 0);
+    closeToday.setHours(closing_time.getHours(), closing_time.getMinutes(), 0, 0);
 
-    // Handle overnight shifts
+    // Overnight shift handling
     if (closeToday <= openToday) closeToday.setDate(closeToday.getDate() + 1);
 
-    let isOpen = false;
-    let nextOpeningTime = openToday;
-    let openingPassed = false;
+    let isOpen = now >= openToday && now <= closeToday;
 
-    if (now >= openToday && now <= closeToday) {
-      isOpen = true; // branch currently open
-    } else if (now < openToday) {
-      // opening today is still in future → show countdown
-      nextOpeningTime = openToday;
-    } else {
-      // now > closeToday → opening already passed
-      openingPassed = true;
-      // next opening could be tomorrow
+    // Determine next opening time
+    let nextOpeningTime;
+    if (now < openToday) {
+      nextOpeningTime = openToday; // opening later today
+    } else if (now > closeToday) {
       nextOpeningTime = new Date(openToday);
-      nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
+      nextOpeningTime.setDate(nextOpeningTime.getDate() + 1); // next day
+    } else {
+      nextOpeningTime = openToday; // currently open, but frontend won't use countdown
     }
 
+    // Format to ISO string
     const toLocalISOString = (date) => {
       const pad = (n) => String(n).padStart(2, "0");
-      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     };
 
-    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime), openingPassed });
+    res.json({
+      isOpen,
+      nextOpeningTime: toLocalISOString(nextOpeningTime),
+    });
   } catch (err) {
     console.error("Branch status error:", err);
     res.status(500).json({ error: "Failed to get branch status" });
