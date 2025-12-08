@@ -221,49 +221,47 @@ export const getBranchStatus = async (req, res) => {
 
     if (!rows.length) return res.status(404).json({ error: "Branch not found" });
 
-    const { opening_time, closing_time } = rows[0];
+    let { opening_time, closing_time } = rows[0];
 
-    // Current time in Manila (UTC+8)
+    // Convert to Manila time (UTC+8)
     const nowUTC = new Date();
     const now = new Date(nowUTC.getTime() + 8 * 60 * 60 * 1000);
 
-    // Build today's opening and closing based on the stored hours and minutes
-    const openToday = new Date(now);
-    openToday.setHours(opening_time.getHours(), opening_time.getMinutes(), 0, 0);
+    opening_time = new Date(opening_time); // MySQL DATETIME → JS Date
+    closing_time = new Date(closing_time);
 
-    let closeToday = new Date(now);
-    closeToday.setHours(closing_time.getHours(), closing_time.getMinutes(), 0, 0);
+    // Handle overnight shifts: if closing < opening, add 1 day
+    if (closing_time <= opening_time) {
+      closing_time.setDate(closing_time.getDate() + 1);
+    }
 
-    // Overnight shift handling
-    if (closeToday <= openToday) closeToday.setDate(closeToday.getDate() + 1);
+    let isOpen = now >= opening_time && now <= closing_time;
 
-    let isOpen = now >= openToday && now <= closeToday;
-
-    // Determine next opening time
+    // Determine next opening time (for countdown)
     let nextOpeningTime;
-    if (now < openToday) {
-      nextOpeningTime = openToday; // opening later today
-    } else if (now > closeToday) {
-      nextOpeningTime = new Date(openToday);
-      nextOpeningTime.setDate(nextOpeningTime.getDate() + 1); // next day
+    if (now < opening_time) {
+      nextOpeningTime = opening_time; // opening is in future
+    } else if (now > closing_time) {
+      // If already closed, next opening is the next day at the same time
+      nextOpeningTime = new Date(opening_time);
+      nextOpeningTime.setDate(nextOpeningTime.getDate() + 1);
     } else {
-      nextOpeningTime = openToday; // currently open, but frontend won't use countdown
+      nextOpeningTime = opening_time; // currently open
     }
 
     // Format to ISO string
     const toLocalISOString = (date) => {
       const pad = (n) => String(n).padStart(2, "0");
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     };
 
-    res.json({
-      isOpen,
-      nextOpeningTime: toLocalISOString(nextOpeningTime),
-    });
+    res.json({ isOpen, nextOpeningTime: toLocalISOString(nextOpeningTime) });
+
   } catch (err) {
     console.error("Branch status error:", err);
     res.status(500).json({ error: "Failed to get branch status" });
   }
 };
+
 
 export { addBranch, deleteBranch };
