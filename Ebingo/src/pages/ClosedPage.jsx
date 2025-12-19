@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import axios from "axios";
@@ -6,61 +6,75 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ClosedPage() {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [openingTimeDisplay, setOpeningTimeDisplay] = useState("");
+
   const location = useLocation();
   const navigate = useNavigate();
+
   const branchId = location.state?.branchId;
+
+  const [timeLeft, setTimeLeft] = useState("");
+  const [showCountdown, setShowCountdown] = useState(false);
 
   useEffect(() => {
     if (!branchId) return;
 
-    const updateTimer = async () => {
-      try {
-        const { data } = await axios.get(`${API_URL}/branches/${branchId}/status`);
-        const now = new Date();
-        const nextOpening = new Date(data.nextOpeningTime);
+    let intervalId;
 
-        if (data.isOpen) {
+    const updateStatus = async () => {
+      try {
+        const { data } = await axios.get(
+          `${API_URL}/branches/${branchId}/status`,
+          { withCredentials: true }
+        );
+
+        const now = new Date(data.serverNow);
+        const opening = new Date(data.openingTime);
+        const closing = new Date(data.closingTime);
+
+        // If branch is open → redirect
+        if (now >= opening && now <= closing) {
           const token = Cookies.get("accessToken");
           if (token) {
             const payload = JSON.parse(atob(token.split(".")[1]));
-            const role = payload.role.toLowerCase();
-            if (role === "cashier") navigate("/cashier/members", { replace: true });
-            else if (role === "guard") navigate("/guard", { replace: true });
+            const role = payload.role?.toLowerCase();
+
+            if (role === "cashier") {
+              navigate("/cashier/members", { replace: true });
+            } else if (role === "guard") {
+              navigate("/guard", { replace: true });
+            }
           }
           return;
         }
 
-        // Calculate total time to next opening
-        const diffMs = nextOpening - now;
-        if (diffMs > 0) {
-          const h = Math.floor(diffMs / 1000 / 60 / 60);
-          const m = Math.floor((diffMs / 1000 / 60) % 60);
-          const s = Math.floor((diffMs / 1000) % 60);
-          setTimeLeft(`${h}:${m}:${s}`);
-        } else {
-          setTimeLeft("0:0:0");
+        // Opening time already PASSED → static message
+        if (opening <= now) {
+          setShowCountdown(false);
+          setTimeLeft("");
+          return;
         }
 
-        // Show next opening as readable
-        setOpeningTimeDisplay(nextOpening.toLocaleString([], {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true
-        }));
+        // Opening time is in the FUTURE → countdown
+        const diffMs = opening - now;
 
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+        const seconds = Math.floor((diffMs / 1000) % 60);
+
+        setShowCountdown(true);
+        setTimeLeft(
+          `${days > 0 ? `${days}d ` : ""}${hours}h ${minutes}m ${seconds}s`
+        );
       } catch (err) {
-        console.error("Failed to fetch branch opening time", err);
+        console.error("Failed to fetch branch status:", err);
       }
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    updateStatus();
+    intervalId = setInterval(updateStatus, 1000);
+
+    return () => clearInterval(intervalId);
   }, [branchId, navigate]);
 
   return (
@@ -68,11 +82,14 @@ export default function ClosedPage() {
       <h1 className="text-3xl font-bold text-red-600 mb-4">
         Ebingo System is currently closed
       </h1>
-      {timeLeft ? (
-        <p className="text-xl">System will open in {timeLeft}</p>
+
+      {showCountdown ? (
+        <p className="text-xl">
+          System will open in <strong>{timeLeft}</strong>
+        </p>
       ) : (
         <p className="text-xl">
-          System will open at {openingTimeDisplay || "the time admin set for opening and closing"}
+          System will open at the time the admin sets for the opening date and time
         </p>
       )}
     </div>
