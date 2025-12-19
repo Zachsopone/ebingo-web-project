@@ -85,7 +85,7 @@ export default function ClosedPage() {
 
       {showCountdown ? (
         <p className="text-xl">
-          System will open in <strong>{timeLeft}</strong>
+          System will open in {timeLeft}
         </p>
       ) : (
         <p className="text-xl">
