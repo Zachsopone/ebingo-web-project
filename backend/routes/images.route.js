@@ -3,10 +3,6 @@ import multer from "multer";
 import uploadImages from "../controllers/images.controller.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -14,7 +10,7 @@ const router = express.Router();
 const storage = multer.diskStorage({
   destination: (_req, file, cb) => {
     const folder = file.fieldname === "profile" ? "upload" : "valid";
-    const uploadDir = path.join(__dirname, "../../Ebingo/public", folder);
+    const uploadDir = path.join(process.cwd(), "Ebingo/public", folder);
     if (!fs.existsSync(uploadDir)) {
       try {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -23,10 +19,13 @@ const storage = multer.diskStorage({
         return cb(error);
       }
     }
+    console.log(`Saving ${file.fieldname} to:`, uploadDir);
     cb(null, uploadDir);
   },
   filename: (_req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const safeName = file.originalname.replace(/\s/g, "_");
+    const finalName = `${Date.now()}-${safeName}`;
+    cb(null, finalName);
   },
 });
 
