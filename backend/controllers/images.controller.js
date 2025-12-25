@@ -1,4 +1,5 @@
-// images.controller.js
+import fs from "fs";
+
 const uploadImages = (req, res) => {
   try {
     const profile = req.files["profile"]?.[0];
@@ -6,6 +7,10 @@ const uploadImages = (req, res) => {
 
     if (!profile || !valid) {
       return res.status(400).json({ error: "Both profile and valid ID images are required." });
+    }
+
+    if (!fs.existsSync(profile.path) || !fs.existsSync(valid.path)) {
+      return res.status(500).json({ error: "Uploaded files not found on server." });
     }
 
     // Return relative paths for accessibility
