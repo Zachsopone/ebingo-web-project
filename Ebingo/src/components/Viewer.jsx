@@ -212,7 +212,7 @@ const Viewer = ({ memberId, onClose }) => {
                   <div className="space-y-6 break-words text-left">
                     <div className="flex flex-col items-center mb-1">
                       <img
-                        src={`${API_URL}/valid/${member.filename2}`}
+                        src={`${API_URL}${member.path2}`}
                         alt="Valid ID"
                         className="object-cover h-50 w-40 border border-black"
                       />
