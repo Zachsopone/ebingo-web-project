@@ -113,10 +113,15 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
         return;
       }
 
+      const sanitizeFileName = (file) => {
+        const sanitizedName = file.name.replace(/\s/g, "_");
+        return new File([file], sanitizedName, { type: file.type });
+      };
+
       // Upload images
       const formData = new FormData();
-      formData.append("profile", selectedFile);
-      formData.append("valid", validFile);
+      formData.append("profile", sanitizeFileName(selectedFile));
+      formData.append("valid", sanitizeFileName(validFile));
 
       console.log("Uploading images...");
 
@@ -131,6 +136,9 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
       if (!uploadResponse.data?.profile || !uploadResponse.data?.valid) {
         throw new Error("File upload failed: Invalid response structure");
       }
+
+      setImageUrl(`${API_URL}${uploadResponse.data.profile.path}`);
+      setValidImageUrl(`${API_URL}${uploadResponse.data.valid.path}`);
 
       // Prepare data for member addition
       const dataToSend = {
