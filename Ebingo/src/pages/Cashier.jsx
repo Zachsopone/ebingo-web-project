@@ -37,7 +37,7 @@ const Cashier = () => {
 
   return (
     <div className="w-full h-screen">
-      <Header />
+      <Header fixedBranchId={branchId}/>
       <Navigation triggerRefetch={() => setRefetchKey((prev) => prev + 1)} />
       <Members fixedBranchId={branchId} refetchKey={refetchKey} />
 
