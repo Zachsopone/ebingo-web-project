@@ -48,7 +48,7 @@ const rfid = async (req, res) => {
     // Check if guard's branch exists in any of member's branches
     const sameBranch = branchRows.some(r => Number(r.branch_id) === Number(guardBranchId));
 
-    // Insert visit log (always with Card_No = "00000000")
+    // Insert visit log with the member's actual Card_No
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(" ")[0];
@@ -60,7 +60,7 @@ const rfid = async (req, res) => {
         member.fname,
         member.mname || "",
         member.lname,
-        "00000000",
+        member.Card_No,
         guardBranchId,
         date,
         time,
