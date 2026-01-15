@@ -15,31 +15,16 @@ const rfid = async (req, res) => {
     const isNumericOrCard = /^[0-9\-]+$/.test(input);
 
     if (isNumericOrCard) {
-      // Try Card_No first; if not found, try idnum
-      const [cardRows] = await db.execute(
-        `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+      const [rows] = await db.execute(
+        `SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
-         FROM members m
-         WHERE m.Card_No = ?
-         ORDER BY m.created_date ASC, m.created_time ASC
-         LIMIT 1`,
+        FROM members m
+        WHERE m.idnum = ?
+        ORDER BY m.created_date ASC, m.created_time ASC
+        LIMIT 1`,
         [input]
       );
-
-      if (cardRows.length > 0) {
-        memberRows = cardRows;
-      } else {
-        const [idRows] = await db.execute(
-          `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
-           FROM members m
-           WHERE m.idnum = ?
-           ORDER BY m.created_date ASC, m.created_time ASC
-           LIMIT 1`,
-          [input]
-        );
-        memberRows = idRows;
-      }
+      memberRows = rows;
     } else {
       // Handle name input (2 or 3 parts)
       const nameParts = input.split(/\s+/).map(p => p.toLowerCase());
@@ -92,11 +77,11 @@ const rfid = async (req, res) => {
     // Fetch branch history
     const [branchRows] = await db.execute(
       `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
-       FROM members m
-       JOIN branches b ON m.branch_id = b.id
-       WHERE m.Card_No = ?
-       ORDER BY m.created_date ASC, m.created_time ASC`,
-      [member.Card_No]
+      FROM members m
+      JOIN branches b ON m.branch_id = b.id
+      WHERE m.idnum = ?
+      ORDER BY m.created_date ASC, m.created_time ASC`,
+      [member.idnum]
     );
 
     const branches = branchRows.map(r => ({
@@ -106,8 +91,10 @@ const rfid = async (req, res) => {
       created_time: r.created_time,
     }));
 
-    const sameBranch = Number(member.branch_id) === Number(guardBranchId);
-
+    const sameBranch = branchRows.some(
+      (b) => Number(b.branch_id) === Number(guardBranchId)
+    );
+    
     // Log visit
     const now = new Date();
     const date = now.toISOString().split("T")[0];
@@ -115,7 +102,7 @@ const rfid = async (req, res) => {
 
     await db.execute(
       `INSERT INTO visit (fname, mname, lname, Card_No, branch_id, Date, time_in, risk_assessment, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, '00000000', ?, ?, ?, ?, ?)`,
       [
         member.fname,
         member.mname || "",
