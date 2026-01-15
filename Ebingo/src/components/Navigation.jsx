@@ -104,6 +104,7 @@ const Navigation = ({ onBranchAdded, triggerRefetch, onUserAdded }) => {
 
   // Generate & download Excel (MasterList)
   const handlePrintMasterList = async () => {
+    const branchName = selectedOption ? `Branch${selectedOption}` : "AllBranches";
     try {
       if (!selectedOption) {
         alert("Please select a branch first!");
@@ -139,7 +140,7 @@ const Navigation = ({ onBranchAdded, triggerRefetch, onUserAdded }) => {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      saveAs(blob, `MasterList_Branch${selectedOption}.xlsx`);
+      saveAs(blob, `MasterList_${branchName}_${new Date().toISOString().slice(0,10)}.xlsx`);
       enqueueSnackbar("MasterList downloaded.", { variant: "success" });
     } catch (err) {
       console.error(err.message);
