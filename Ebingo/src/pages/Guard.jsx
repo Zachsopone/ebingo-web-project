@@ -103,9 +103,13 @@ const Guard = () => {
         setProfileIdUrl(profileIdUrl);
         setImageError(false);
 
-        if (!memberData.sameBranch && memberData.banned !== 1) setStatus("different_branch");
-        else if (memberData.banned === 1) setStatus("banned");
-        else setStatus("valid");
+        if (memberData.banned === 1) {
+          setStatus("banned");
+        } else if (memberData.sameBranch) {
+          setStatus("valid");
+        } else {
+          setStatus("different_branch");
+        }
 
         // const fullName = `${memberData.fname} ${memberData.mname || ""} ${memberData.lname}`.trim();
         // saveMemberData(fullName, memberData.Card_No);
@@ -251,7 +255,7 @@ const Guard = () => {
           {status === "valid" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-3 text-lg">
-                Welcome {member.lname}, {member.mname || ""} {member.fname}, {member.idnum} to Ebingo
+                Welcome {member.lname}, {member.mname || ""} {member.fname} to Ebingo
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
@@ -264,7 +268,7 @@ const Guard = () => {
           {status === "banned" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
-                {member.lname}, {member.mname || ""} {member.fname} {member.idnum} is BANNED
+                {member.lname}, {member.mname || ""} {member.fname} is BANNED
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
@@ -277,7 +281,7 @@ const Guard = () => {
           {status === "different_branch" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
-                {member.lname}, {member.mname || ""} {member.fname} {member.idnum} is not registered from this branch
+                {member.lname}, {member.mname || ""} {member.fname}, {member.idnum}
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
