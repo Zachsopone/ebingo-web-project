@@ -103,7 +103,7 @@ const Guard = () => {
         setProfileIdUrl(profileIdUrl);
         setImageError(false);
 
-        if (!memberData.sameBranch) setStatus("different_branch");
+        if (!memberData.sameBranch && memberData.banned !== 1) setStatus("different_branch");
         else if (memberData.banned === 1) setStatus("banned");
         else setStatus("valid");
 
