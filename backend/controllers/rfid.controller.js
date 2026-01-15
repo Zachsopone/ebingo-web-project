@@ -8,14 +8,12 @@ const rfid = async (req, res) => {
   }
 
   try {
-    let memberRows = [];
     const input = rfid.trim();
+    let memberRows = [];
 
-    // Determine if input is numeric (ID) or name
     const isNumeric = /^[0-9\-]+$/.test(input);
 
     if (isNumeric) {
-      // Lookup by ID number
       const [rows] = await db.execute(
         `SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
@@ -27,7 +25,6 @@ const rfid = async (req, res) => {
       );
       memberRows = rows;
     } else {
-      // Handle name input (2 or 3 parts)
       const nameParts = input.split(/\s+/).map(p => p.toLowerCase());
       let query = "";
       let params = [];
@@ -69,13 +66,14 @@ const rfid = async (req, res) => {
     }
 
     if (memberRows.length === 0) {
-      return res.status(404).json({ message: "Not Registered" });
+      // Member does not exist in DB at all
+      return res.status(404).json({ message: "Member not found in system" });
     }
 
     const member = memberRows[0];
     const profileIdUrl = member.filename ? `/upload/${member.filename}` : null;
 
-    // Fetch all branch records for this member
+    // Fetch branch records
     const [branchRows] = await db.execute(
       `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
        FROM members m
@@ -92,12 +90,11 @@ const rfid = async (req, res) => {
       created_time: r.created_time,
     }));
 
-    // Check if member has this guard's branch
     const sameBranch = branchRows.some(
       (b) => Number(b.branch_id) === Number(guardBranchId)
     );
 
-    // Log visit (Card_No always 00000000)
+    // Log visit with Card_No always 00000000
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(" ")[0];
@@ -109,9 +106,9 @@ const rfid = async (req, res) => {
         member.fname,
         member.mname || "",
         member.lname,
-        member.idnum,        // real member ID
-        '00000000',          // default Card_No
-        guardBranchId,       // the branch where guard scanned
+        member.idnum,
+        "00000000",
+        guardBranchId,
         date,
         time,
         member.risk_assessment || "",
@@ -134,7 +131,6 @@ const rfid = async (req, res) => {
       branches,
       profileIdUrl,
     });
-
   } catch (error) {
     console.error("Database error:", error.message);
     return res.status(500).json({ message: "Server error", error: error.message });
