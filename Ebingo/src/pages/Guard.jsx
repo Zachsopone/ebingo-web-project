@@ -251,7 +251,7 @@ const Guard = () => {
           {status === "valid" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-3 text-lg">
-                Welcome {member.lname}, {member.mname || ""} {member.fname} ({member.idnum}) to Ebingo
+                Welcome {member.lname}, {member.mname || ""} {member.fname}, {member.idnum} to Ebingo
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
@@ -264,7 +264,7 @@ const Guard = () => {
           {status === "banned" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
-                {member.lname}, {member.mname || ""} {member.fname} ({member.idnum}) is BANNED
+                {member.lname}, {member.mname || ""} {member.fname} {member.idnum} is BANNED
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
@@ -277,7 +277,7 @@ const Guard = () => {
           {status === "different_branch" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
-                {member.lname}, {member.mname || ""} {member.fname} ({member.idnum}) is not registered from this branch
+                {member.lname}, {member.mname || ""} {member.fname} {member.idnum} is not registered from this branch
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
