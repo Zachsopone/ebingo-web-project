@@ -1,19 +1,25 @@
 import { db } from "../connect.js";
 
 const rfid = async (req, res) => {
-  const { rfid, guardBranchId } = req.body;
+  const { rfid: input, guardBranchId } = req.body;
 
-  if (!rfid) {
+  if (!input) {
     return res.status(400).json({ message: "ID number or name is required." });
   }
 
   try {
-    const input = rfid.trim();
     let memberRows = [];
 
-    const isNumeric = /^[0-9\-]+$/.test(input);
+    const trimmedInput = input.trim();
+    const isNumeric = /^[0-9]+$/.test(trimmedInput); // Only digits for idnum
 
     if (isNumeric) {
+      // Convert to integer to match INT column
+      const idnum = parseInt(trimmedInput, 10);
+      if (isNaN(idnum)) {
+        return res.status(400).json({ message: "Invalid ID number." });
+      }
+
       const [rows] = await db.execute(
         `SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
@@ -21,11 +27,13 @@ const rfid = async (req, res) => {
          WHERE m.idnum = ?
          ORDER BY m.created_date ASC, m.created_time ASC
          LIMIT 1`,
-        [input]
+        [idnum]
       );
       memberRows = rows;
+
     } else {
-      const nameParts = input.split(/\s+/).map(p => p.toLowerCase());
+      // Name search (2 or 3 parts)
+      const nameParts = trimmedInput.split(/\s+/).map(p => p.toLowerCase());
       let query = "";
       let params = [];
 
@@ -34,29 +42,25 @@ const rfid = async (req, res) => {
           SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
-          WHERE (
-            LOWER(m.fname) = ? AND LOWER(m.mname) = ? AND LOWER(m.lname) = ?
-          ) OR (
-            LOWER(m.lname) = ? AND LOWER(m.fname) = ? AND LOWER(m.mname) = ?
-          )
+          WHERE (LOWER(m.fname) = ? AND LOWER(m.mname) = ? AND LOWER(m.lname) = ?)
+             OR (LOWER(m.lname) = ? AND LOWER(m.fname) = ? AND LOWER(m.mname) = ?)
           ORDER BY m.created_date ASC, m.created_time ASC
           LIMIT 1
         `;
         params = [...nameParts, ...nameParts];
+
       } else if (nameParts.length === 2) {
         query = `
           SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
-          WHERE (
-            LOWER(m.fname) = ? AND LOWER(m.lname) = ?
-          ) OR (
-            LOWER(m.lname) = ? AND LOWER(m.fname) = ?
-          )
+          WHERE (LOWER(m.fname) = ? AND LOWER(m.lname) = ?)
+             OR (LOWER(m.lname) = ? AND LOWER(m.fname) = ?)
           ORDER BY m.created_date ASC, m.created_time ASC
           LIMIT 1
         `;
         params = [...nameParts, ...nameParts];
+
       } else {
         return res.status(400).json({ message: "Invalid name format." });
       }
@@ -66,14 +70,13 @@ const rfid = async (req, res) => {
     }
 
     if (memberRows.length === 0) {
-      // Member does not exist in DB at all
-      return res.status(404).json({ message: "Member not found in system" });
+      return res.status(404).json({ message: "Member not found" });
     }
 
     const member = memberRows[0];
     const profileIdUrl = member.filename ? `/upload/${member.filename}` : null;
 
-    // Fetch branch records
+    // Fetch all branches this member is registered in
     const [branchRows] = await db.execute(
       `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
        FROM members m
@@ -90,25 +93,24 @@ const rfid = async (req, res) => {
       created_time: r.created_time,
     }));
 
+    // ✅ Check if any branch matches guard's branch
     const sameBranch = branchRows.some(
       (b) => Number(b.branch_id) === Number(guardBranchId)
     );
 
-    // Log visit with Card_No always 00000000
+    // Log visit (Card_No is always 00000000)
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(" ")[0];
 
     await db.execute(
-      `INSERT INTO visit (fname, mname, lname, idnum, Card_No, branch_id, Date, time_in, risk_assessment, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO visit (fname, mname, lname, Card_No, branch_id, Date, time_in, risk_assessment, status)
+       VALUES (?, ?, ?, '00000000', ?, ?, ?, ?, ?)`,
       [
         member.fname,
         member.mname || "",
         member.lname,
-        member.idnum,
-        "00000000",
-        guardBranchId,
+        member.branch_id,
         date,
         time,
         member.risk_assessment || "",
@@ -131,6 +133,7 @@ const rfid = async (req, res) => {
       branches,
       profileIdUrl,
     });
+
   } catch (error) {
     console.error("Database error:", error.message);
     return res.status(500).json({ message: "Server error", error: error.message });
