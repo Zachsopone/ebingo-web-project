@@ -4,24 +4,25 @@ const rfid = async (req, res) => {
   const { rfid, guardBranchId } = req.body;
 
   if (!rfid) {
-    return res.status(400).json({ message: "Card number, ID number, or name is required." });
+    return res.status(400).json({ message: "ID number or name is required." });
   }
 
   try {
     let memberRows = [];
     const input = rfid.trim();
 
-    // Determine if input is numeric or name
-    const isNumericOrCard = /^[0-9\-]+$/.test(input);
+    // Determine if input is numeric (ID) or name
+    const isNumeric = /^[0-9\-]+$/.test(input);
 
-    if (isNumericOrCard) {
+    if (isNumeric) {
+      // Lookup by ID number
       const [rows] = await db.execute(
         `SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
-        FROM members m
-        WHERE m.idnum = ?
-        ORDER BY m.created_date ASC, m.created_time ASC
-        LIMIT 1`,
+         FROM members m
+         WHERE m.idnum = ?
+         ORDER BY m.created_date ASC, m.created_time ASC
+         LIMIT 1`,
         [input]
       );
       memberRows = rows;
@@ -33,7 +34,7 @@ const rfid = async (req, res) => {
 
       if (nameParts.length === 3) {
         query = `
-          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+          SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (
@@ -47,7 +48,7 @@ const rfid = async (req, res) => {
         params = [...nameParts, ...nameParts];
       } else if (nameParts.length === 2) {
         query = `
-          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+          SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (
@@ -68,19 +69,19 @@ const rfid = async (req, res) => {
     }
 
     if (memberRows.length === 0) {
-      return res.status(404).json({ message: "Not Found" });
+      return res.status(404).json({ message: "Not Registered" });
     }
 
     const member = memberRows[0];
     const profileIdUrl = member.filename ? `/upload/${member.filename}` : null;
 
-    // Fetch branch history
+    // Fetch all branch records for this member
     const [branchRows] = await db.execute(
       `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
-      FROM members m
-      JOIN branches b ON m.branch_id = b.id
-      WHERE m.idnum = ?
-      ORDER BY m.created_date ASC, m.created_time ASC`,
+       FROM members m
+       JOIN branches b ON m.branch_id = b.id
+       WHERE m.idnum = ?
+       ORDER BY m.created_date ASC, m.created_time ASC`,
       [member.idnum]
     );
 
@@ -91,24 +92,26 @@ const rfid = async (req, res) => {
       created_time: r.created_time,
     }));
 
+    // Check if member has this guard's branch
     const sameBranch = branchRows.some(
       (b) => Number(b.branch_id) === Number(guardBranchId)
     );
-    
-    // Log visit
+
+    // Log visit (Card_No always 00000000)
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(" ")[0];
 
     await db.execute(
-      `INSERT INTO visit (fname, mname, lname, Card_No, branch_id, Date, time_in, risk_assessment, status)
-       VALUES (?, ?, ?, '00000000', ?, ?, ?, ?, ?)`,
+      `INSERT INTO visit (fname, mname, lname, idnum, Card_No, branch_id, Date, time_in, risk_assessment, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         member.fname,
         member.mname || "",
         member.lname,
-        member.Card_No,
-        member.branch_id,
+        member.idnum,        // real member ID
+        '00000000',          // default Card_No
+        guardBranchId,       // the branch where guard scanned
         date,
         time,
         member.risk_assessment || "",
@@ -120,7 +123,6 @@ const rfid = async (req, res) => {
       message: "Member found and visit recorded",
       data: {
         idnum: member.idnum,
-        Card_No: member.Card_No,
         fname: member.fname,
         mname: member.mname,
         lname: member.lname,
