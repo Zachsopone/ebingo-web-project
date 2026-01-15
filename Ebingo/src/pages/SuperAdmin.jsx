@@ -12,24 +12,34 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 const SuperAdmin = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const [branchId, setBranchId] = useState(null);
   const [refetchKey, setRefetchKey] = useState(0);
-  
+    
   useEffect(() => {
     const token = Cookies.get("accessToken");
+
     if (!token) {
       enqueueSnackbar("Session expired, please log in again.", { variant: "warning" });
       navigate("/");
-    } else {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (payload.role.toLowerCase() !== "superadmin" && payload.role.toLowerCase() !== "kaizen") {
-          enqueueSnackbar("Unauthorized access", { variant: "error" });
-          navigate("/");
-        }
-      } catch (err) {
-        console.error("Token decode error:", err);
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      // role validation
+      if (!["kaizen", "superadmin"].includes(payload.role.toLowerCase())) {
+        enqueueSnackbar("Unauthorized access", { variant: "error" });
         navigate("/");
+        return;
       }
+
+      // branch id for header
+      setBranchId(payload.branch_id || null);
+
+    } catch (err) {
+      console.error("Token decode error:", err);
+      navigate("/");
     }
   }, [enqueueSnackbar, navigate]);
 
@@ -43,7 +53,7 @@ const SuperAdmin = () => {
 
   return (
     <div className="w-full h-screen">
-      <Header />
+      <Header fixedBranchId={branchId}/>
       <Navigation triggerRefetch={() => setRefetchKey(prev => prev + 1)} />
       <Members refetchKey={refetchKey} />
       <button
