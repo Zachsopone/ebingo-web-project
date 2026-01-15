@@ -25,15 +25,20 @@ const Header = ({ fixedBranchId }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch branch sname
-  useEffect(() => {
-    if (!fixedBranchId) return;
-
-    axios
-      .get(`${API_URL}/branches/${fixedBranchId}`)
-      .then(res => setBranchName(res.data.sname))
-      .catch(() => setBranchName(""));
-  }, [fixedBranchId]);
+// Fetch branch name from full list
+useEffect(() => {
+  if (!fixedBranchId) return;
+  axios
+    .get(`${API_URL}/branches`, { withCredentials: true })  // Add withCredentials if using cookie auth
+    .then(res => {
+      const branch = res.data.find(b => b.id === fixedBranchId);
+      setBranchName(branch ? branch.sname : "");
+    })
+    .catch(err => {
+      console.error("Error fetching branches:", err);
+      setBranchName("");
+    });
+}, [fixedBranchId]);
 
   return (
     <header className="bg-[#A8D5E3] w-full h-[3.2rem] flex items-center relative px-4">
