@@ -37,7 +37,7 @@ const LoginPage = () => {
       Cookies.set("accessToken", token, { expires: 1, sameSite: "Lax" });
       
       // Set default Authorization header so guarded GETs work
-      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      // axios.defaults.headers.common.Authorization = `Bearer ${token}`;
 
       // Decode payload safely
       let payload = {};
