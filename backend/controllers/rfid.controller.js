@@ -4,22 +4,64 @@ const rfid = async (req, res) => {
   const { rfid, guardBranchId } = req.body;
 
   if (!rfid) {
-    return res.status(400).json({ message: "ID number is required." });
+    return res.status(400).json({ message: "ID number or Name is required." });
   }
 
   try {
     const input = rfid.trim();
 
-    // Find member by idnum
-    const [memberRows] = await db.execute(
-      `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
-              m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
-       FROM members m
-       WHERE m.idnum = ?
-       ORDER BY m.created_date ASC, m.created_time ASC
-       LIMIT 1`,
-      [input]
-    );
+    let memberRows = [];
+
+    // Check if input is numeric (idnum)
+    const isNumeric = /^[0-9\-]+$/.test(input);
+
+    if (isNumeric) {
+      // Search by idnum
+      const [rows] = await db.execute(
+        `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+                m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+         FROM members m
+         WHERE m.idnum = ?
+         ORDER BY m.created_date ASC, m.created_time ASC
+         LIMIT 1`,
+        [input]
+      );
+      memberRows = rows;
+    } else {
+      // Search by name (supports multiple formats)
+      const nameParts = input.split(/\s+/).map(p => p.toLowerCase());
+      let query = "";
+      let params = [];
+
+      if (nameParts.length === 3) {
+        query = `
+          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+          FROM members m
+          WHERE (LOWER(m.fname) = ? AND LOWER(m.mname) = ? AND LOWER(m.lname) = ?)
+             OR (LOWER(m.lname) = ? AND LOWER(m.fname) = ? AND LOWER(m.mname) = ?)
+          ORDER BY m.created_date ASC, m.created_time ASC
+          LIMIT 1
+        `;
+        params = [...nameParts, ...nameParts];
+      } else if (nameParts.length === 2) {
+        query = `
+          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
+          FROM members m
+          WHERE (LOWER(m.fname) = ? AND LOWER(m.lname) = ?)
+             OR (LOWER(m.lname) = ? AND LOWER(m.fname) = ?)
+          ORDER BY m.created_date ASC, m.created_time ASC
+          LIMIT 1
+        `;
+        params = [...nameParts, ...nameParts];
+      } else {
+        return res.status(400).json({ message: "Invalid name format." });
+      }
+
+      const [rows] = await db.execute(query, params);
+      memberRows = rows;
+    }
 
     if (memberRows.length === 0) {
       return res.status(404).json({ message: "Not Found" });
@@ -28,9 +70,9 @@ const rfid = async (req, res) => {
     const member = memberRows[0];
     const profileIdUrl = member.filename ? `/upload/${member.filename}` : null;
 
-    // Fetch all branches for this member
+    // Fetch all branches for this member and remove duplicates
     const [branchRows] = await db.execute(
-      `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
+      `SELECT DISTINCT b.id AS branch_id, b.sname, m.created_date, m.created_time
        FROM members m
        JOIN branches b ON m.branch_id = b.id
        WHERE m.idnum = ?
@@ -45,10 +87,9 @@ const rfid = async (req, res) => {
       created_time: r.created_time,
     }));
 
-    // Check if guard's branch exists in any of member's branches
     const sameBranch = branchRows.some(r => Number(r.branch_id) === Number(guardBranchId));
 
-    // Insert visit log with the member's actual Card_No
+    // Insert visit log with actual Card_No
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(" ")[0];
