@@ -72,7 +72,7 @@ const rfid = async (req, res) => {
 
     // Fetch all branches for this member and remove duplicates
     const [branchRows] = await db.execute(
-      `SELECT DISTINCT b.id AS branch_id, b.sname, m.created_date, m.created_time
+      `SELECT b.id AS branch_id, b.sname, m.created_date, m.created_time
        FROM members m
        JOIN branches b ON m.branch_id = b.id
        WHERE m.idnum = ?
