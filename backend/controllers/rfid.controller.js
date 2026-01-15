@@ -89,10 +89,21 @@ const rfid = async (req, res) => {
 
     const sameBranch = branchRows.some(r => Number(r.branch_id) === Number(guardBranchId));
 
-    // Insert visit log with actual Card_No
+    // Get current Philippine time
     const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().split(" ")[0];
+    const phDateTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Manila" })
+    );
+
+    const yyyy = phDateTime.getFullYear();
+    const mm = String(phDateTime.getMonth() + 1).padStart(2, "0");
+    const dd = String(phDateTime.getDate()).padStart(2, "0");
+    const hh = String(phDateTime.getHours()).padStart(2, "0");
+    const min = String(phDateTime.getMinutes()).padStart(2, "0");
+    const ss = String(phDateTime.getSeconds()).padStart(2, "0");
+
+    const date = `${yyyy}-${mm}-${dd}`;    // YYYY-MM-DD
+    const time = `${hh}:${min}:${ss}`;      // HH:MM:SS (24-hour)
 
     await db.execute(
       `INSERT INTO visit (fname, mname, lname, Card_No, branch_id, Date, time_in, risk_assessment, status)
