@@ -11,15 +11,15 @@ export const downloadVisitsExcel = async (req, res) => {
               m.lname AS LastName, 
               m.Card_No AS CardNo, 
               b.sname AS Branch, 
-              DATE_FORMAT(v.date, '%m/%d/%Y') AS Date,
-              DATE_FORMAT(v.time_in, '%h:%i %p') AS Time,
+              DATE_FORMAT(CONVERT_TZ(v.date, '+00:00', '+08:00'), '%m/%d/%Y') AS Date,
+              DATE_FORMAT(CONVERT_TZ(v.time_in, '+00:00', '+08:00'), '%H:%i:%s') AS Time,
               v.risk_assessment AS \`Risk Assessment\`,
               CASE WHEN v.status = 1 THEN 'Ban' ELSE 'Not Ban' END AS Status
-       FROM visit v
-       JOIN members m ON v.Card_No = m.Card_No
-       JOIN branches b ON v.branch_id = b.id
-       WHERE v.Card_No = ? AND m.id = ?
-       ORDER BY v.date DESC, v.time_in DESC`,
+      FROM visit v
+      JOIN members m ON v.Card_No = m.Card_No
+      JOIN branches b ON v.branch_id = b.id
+      WHERE v.Card_No = ? AND m.id = ?
+      ORDER BY v.date DESC, v.time_in DESC`,
       [cardNo, id]
     );
 
