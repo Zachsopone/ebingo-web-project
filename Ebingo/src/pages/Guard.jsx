@@ -170,7 +170,7 @@ const Guard = () => {
           onSubmit={scanMode ? (e) => e.preventDefault() : handleSubmit}
           className="flex flex-col gap-2 sm:w-auto w-full"
         >
-          <label className="text-lg">Scan RFID / ID / Name</label>
+          <label className="text-lg">Scan ID Number / Name</label>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               type="text"
