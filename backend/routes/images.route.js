@@ -1,61 +1,59 @@
 import express from "express";
 import multer from "multer";
+import path from 'path';
+import fs from 'fs';
 import uploadImages from "../controllers/images.controller.js";
-import fs from "fs";
-import path from "path";
 
 const router = express.Router();
 
-// Configure Multer for file uploads
+const STORAGE_ROOT = process.env.STORAGE_PATH || path.join(process.cwd(), "storage");
+
+const UPLOAD_DIR = path.join(STORAGE_ROOT, "upload");
+const VALID_DIR  = path.join(STORAGE_ROOT, "valid");
+
+// Ensure directories exist
+[UPLOAD_DIR, VALID_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  console.log(`Created directory: ${dir}`);
+});
+
+// Custom storage 
 const storage = multer.diskStorage({
   destination: (_req, file, cb) => {
-    const folder = file.fieldname === "profile" ? "upload" : "valid";
-    const uploadDir = path.join(process.cwd(), "Ebingo/public", folder);
-    if (!fs.existsSync(uploadDir)) {
-      try {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      } catch (error) {
-        console.error("Failed to create directory:", error);
-        return cb(error);
-      }
-    }
-    console.log(`Saving ${file.fieldname} to:`, uploadDir);
-    cb(null, uploadDir);
+    if (file.fieldname === "profile") return cb(null, UPLOAD_DIR);
+    if (file.fieldname === "valid") return cb(null, VALID_DIR);
+    cb(new Error("Invalid field name"));
   },
   filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/\s/g, "_");
-    const finalName = `${Date.now()}-${safeName}`;
-    cb(null, finalName);
-  },
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+  }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (_req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-    if (!allowedTypes.includes(file.mimetype)) {
-      const error = new Error("Invalid file type. Only JPEG, PNG, and GIF are allowed.");
-      error.status = 400;
-      return cb(error);
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, GIF and WebP images allowed"), false);
     }
-    cb(null, true);
-  },
+  }
 });
 
 // Route for uploading images
 router.post(
-  "/upload",
+  '/upload',
   upload.fields([
-    { name: "profile", maxCount: 1 },
-    { name: "valid", maxCount: 1 },
+    { name: 'profile', maxCount: 1 },
+    { name: 'valid',   maxCount: 1 }
   ]),
   (err, _req, res, next) => {
     if (err instanceof multer.MulterError) {
-      console.error("Multer error:", err.message);
       return res.status(400).json({ error: err.message });
-    } else if (err) {
-      console.error("Error uploading file:", err.message);
+    }
+    if (err) {
       return res.status(400).json({ error: err.message });
     }
     next();
