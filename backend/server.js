@@ -48,14 +48,14 @@ app.use(cookieParser());
 
 
 //ROUTES
-app.use("/upload", express.static(path.join(STORAGE_ROOT, "upload")));
-app.use("/valid", express.static(path.join(STORAGE_ROOT, "valid")));
 app.use("/auth", authRoutes);
 app.use("/branches", branchesRoute);
 app.use("/users", usersRoute);
 app.use("/members/master", masterRoute);
 app.use("/members", membersRoutes);
 app.use("/docx", docsRoute); 
+app.use("/upload", express.static(path.join(STORAGE_ROOT, "upload")));
+app.use("/valid", express.static(path.join(STORAGE_ROOT, "valid")));
 app.use("/images", imgRoute);
 app.use("/rfid", rfidRoute);
 app.use("/status", banRoute);
