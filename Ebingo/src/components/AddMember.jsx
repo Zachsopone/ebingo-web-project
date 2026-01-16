@@ -137,8 +137,10 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
         throw new Error("File upload failed: Invalid response structure");
       }
 
-      setImageUrl(`${API_URL}${uploadResponse.data.profile.path}`);
-      setValidImageUrl(`${API_URL}${uploadResponse.data.valid.path}`);
+      const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+
+      setImageUrl(`${baseUrl}${uploadResponse.data.profile.path}`);
+      setValidImageUrl(`${baseUrl}${uploadResponse.data.valid.path}`);
 
       // Prepare data for member addition
       const dataToSend = {
