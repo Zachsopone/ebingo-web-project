@@ -114,7 +114,3 @@ const port = process.env.PORT || 12991;
 app.listen(port, () => {
   console.log(`Server is running live on port ${port}`);
 });
-
-console.log(`Static files served from:`);
-console.log(`  /upload → ${UPLOAD_DIR}`);
-console.log(`  /valid  → ${VALID_DIR}`);
