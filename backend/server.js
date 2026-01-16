@@ -5,7 +5,7 @@ import authRoutes from "./routes/auth.js";
 import membersRoutes from "./routes/members.route.js";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 import rfidRoute from "./routes/rfid.route.js";
 // import logRoute from "./routes/log.route.js";
 import banRoute from "./routes/ban.route.js";
@@ -20,8 +20,8 @@ import playersRoute from "./routes/players.route.js";
 import docsRoute from "./routes/docs.route.js";
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const STORAGE_ROOT = process.env.STORAGE_PATH || path.join(process.cwd(), "storage");
+
 
 const app = express();
 
@@ -29,13 +29,6 @@ const allowedOrigins = [
     'http://localhost:5173',
     'https://ebingo-web-project.onrender.com'
 ];
-
-app.use((req,res,next)=>{
-  console.log("🔹 Incoming Cookie:", req.headers.cookie);
-  console.log("🔹 Parsed cookie:", req.cookies);
-  console.log("🔹 Auth header:", req.headers.authorization);
-  next();
-});
 
 app.use(express.json({ limit: "10mb" })); 
 app.use(
@@ -54,8 +47,9 @@ app.use(
 app.use(cookieParser());
 
 
-
 //ROUTES
+app.use("/upload", express.static(path.join(STORAGE_ROOT, "upload")));
+app.use("/valid", express.static(path.join(STORAGE_ROOT, "valid")));
 app.use("/auth", authRoutes);
 app.use("/branches", branchesRoute);
 app.use("/users", usersRoute);
@@ -71,13 +65,10 @@ app.use("/visits", visitsRoute);
 app.use("/range", rangeRoute);
 app.use("/players", playersRoute);
 
-// Serve static files
-app.use("/upload", express.static(path.join(__dirname, "../Ebingo/public/upload")));
-app.use("/valid", express.static(path.join(__dirname, "../Ebingo/public/valid")));
 
 // API endpoint to get all uploaded images
-app.get("/images", (req, res) => {
-  const uploadDir = path.join(__dirname, "../Ebingo/public/upload");
+app.get("/images", (_req, res) => {
+  const uploadDir = path.join(STORAGE_ROOT, "upload");
   fs.readdir(uploadDir, (err, files) => {
     if (err) {
       return res.status(500).json({ error: "Unable to scan directory: " + err });
@@ -94,7 +85,7 @@ app.get("/images", (req, res) => {
 // Route for deleting files
 app.delete("/delete/:filename", (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, "../Ebingo/public/upload", filename);
+  const filePath = path.join(STORAGE_ROOT, "upload", filename);
 
   fs.unlink(filePath, (err) => {
     if (err) {
@@ -118,9 +109,12 @@ app.get("/guard", verifyUser(["guard", "cashier", "superadmin", "kaizen"]), (req
   return res.json({ Status: "Guard Access", name: req.user });
 });
 
-
 const port = process.env.PORT || 12991;
 
 app.listen(port, () => {
   console.log(`Server is running live on port ${port}`);
 });
+
+console.log(`Static files served from:`);
+console.log(`  /upload → ${UPLOAD_DIR}`);
+console.log(`  /valid  → ${VALID_DIR}`);
