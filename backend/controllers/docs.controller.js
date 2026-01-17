@@ -217,7 +217,7 @@ export const generateMemberDocx = async (req, res) => {
         : []),
 
       ...[
-        { l: "Card Number:", v: member.Card_No },
+        { l: "Card Number:", v: member.idnum },
         { l: "Monthly Income:", v: member.mi },
       ].flatMap((i) => [labelPara(i.l), valuePara(i.v)]),
     ];
@@ -278,7 +278,7 @@ export const generateMemberDocx = async (req, res) => {
     const buffer = await Packer.toBuffer(doc);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="Player_Registration_${safeText(member.Card_No)}.docx"`
+      `attachment; filename="Player_Registration_${safeText(member.idnum)}.docx"`
     );
     res.setHeader(
       "Content-Type",
