@@ -136,7 +136,7 @@ const Members = ({ fixedBranchId, refetchKey }) => {
       return (
         fullName1.includes(term) ||
         fullName2.includes(term) ||
-        (user.Card_No && user.Card_No.toString().toLowerCase().includes(term))
+        (user.idnum && user.idnum.toString().toLowerCase().includes(term))
       );
     });
 
@@ -221,7 +221,7 @@ const Members = ({ fixedBranchId, refetchKey }) => {
                   setSearchMessage("");
                 }
               }}
-              placeholder="Enter name or Card No"
+              placeholder="Enter name or ID Number"
               className="p-2 border border-black"
             />
           </div>
@@ -248,7 +248,7 @@ const Members = ({ fixedBranchId, refetchKey }) => {
               <th className="border border-black rounded-md">Permanent Address</th>
               <th className="border border-black rounded-md">Civil Status</th>
               <th className="border border-black rounded-md">Contact Number</th>
-              <th className="border border-black rounded-md">Card Number</th>
+              <th className="border border-black rounded-md">ID Number</th>
               <th className="border border-black rounded-md">Email Address</th>
               <th className="border border-black rounded-md">Nature of Work</th>
               <th className="border border-black rounded-md">Risk Assessment</th>
