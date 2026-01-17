@@ -18,7 +18,7 @@ const rfid = async (req, res) => {
     if (isNumeric) {
       // Search by idnum
       const [rows] = await db.execute(
-        `SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+        `SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                 m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
          FROM members m
          WHERE m.idnum = ?
@@ -35,7 +35,7 @@ const rfid = async (req, res) => {
 
       if (nameParts.length === 3) {
         query = `
-          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+          SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (LOWER(m.fname) = ? AND LOWER(m.mname) = ? AND LOWER(m.lname) = ?)
@@ -46,7 +46,7 @@ const rfid = async (req, res) => {
         params = [...nameParts, ...nameParts];
       } else if (nameParts.length === 2) {
         query = `
-          SELECT m.idnum, m.Card_No, m.fname, m.mname, m.lname, m.banned,
+          SELECT m.idnum, m.fname, m.mname, m.lname, m.banned,
                  m.filename, m.branch_id, m.created_date, m.created_time, m.risk_assessment
           FROM members m
           WHERE (LOWER(m.fname) = ? AND LOWER(m.lname) = ?)
@@ -106,13 +106,12 @@ const rfid = async (req, res) => {
     const time = `${hh}:${min}:${ss}`;      // HH:MM:SS (24-hour)
 
     await db.execute(
-      `INSERT INTO visit (fname, mname, lname, Card_No, branch_id, Date, time_in, risk_assessment, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO visit (fname, mname, lname, branch_id, Date, time_in, risk_assessment, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         member.fname,
         member.mname || "",
         member.lname,
-        member.Card_No,
         guardBranchId,
         date,
         time,
@@ -125,7 +124,6 @@ const rfid = async (req, res) => {
       message: "Member found and visit recorded",
       data: {
         idnum: member.idnum,
-        Card_No: member.Card_No,
         fname: member.fname,
         mname: member.mname,
         lname: member.lname,
