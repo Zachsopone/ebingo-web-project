@@ -3,24 +3,23 @@ import * as XLSX from "xlsx";
 
 export const downloadVisitsExcel = async (req, res) => {
   try {
-    const { id, cardNo } = req.params;
+    const { id, IDNum } = req.params;
 
     const [rows] = await db.query(
       `SELECT m.fname AS FirstName, 
               m.mname AS MiddleName, 
               m.lname AS LastName, 
-              m.Card_No AS CardNo, 
               b.sname AS Branch, 
               DATE_FORMAT(v.date, '%m/%d/%Y') AS Date,
               DATE_FORMAT(v.time_in, '%h:%i %p') AS Time,
               v.risk_assessment AS \`Risk Assessment\`,
               CASE WHEN v.status = 1 THEN 'Ban' ELSE 'Not Ban' END AS Status
        FROM visit v
-       JOIN members m ON v.Card_No = m.Card_No
+       JOIN members m ON v.idnum = m.idnum
        JOIN branches b ON v.branch_id = b.id
-       WHERE v.Card_No = ? AND m.id = ?
+       WHERE v.idnum = ? AND m.id = ?
        ORDER BY v.date DESC, v.time_in DESC`,
-      [cardNo, id]
+      [IDNum, id]
     );
 
     if (!rows || rows.length === 0) {
@@ -38,7 +37,7 @@ export const downloadVisitsExcel = async (req, res) => {
     // Set headers
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=visit_${cardNo}.xlsx`
+      `attachment; filename=visit_${IDNum}.xlsx`
     );
     res.setHeader(
       "Content-Type",
