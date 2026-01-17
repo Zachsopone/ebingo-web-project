@@ -17,7 +17,6 @@ export const downloadVisitsByDateRange = async (req, res) => {
         v.fname AS FirstName,
         v.mname AS MiddleName,
         v.lname AS LastName,
-        v.Card_No AS CardNo,
         b.sname AS Branch,
         DATE_FORMAT(v.Date, '%m/%d/%Y') AS Date,
         DATE_FORMAT(v.time_in, '%h:%i %p') AS Time,
