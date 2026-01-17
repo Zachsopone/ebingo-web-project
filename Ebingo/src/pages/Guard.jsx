@@ -88,11 +88,11 @@ const Guard = () => {
   }, [member, profileIdUrl, status, clearDisplay, scanMode]);
 
   // Handle RFID submit
-  const handleRFIDSubmit = useCallback(async (cardNumber) => {
+  const handleRFIDSubmit = useCallback(async (IDNum) => {
     try {
       const guardBranchId = getGuardBranchId();
       const res = await axios.post(`${API_URL}/rfid`, {
-        rfid: cardNumber,
+        rfid: IDNum,
         guardBranchId,
       });
       const { data: memberData, branches, profileIdUrl } = res.data;
@@ -112,7 +112,7 @@ const Guard = () => {
         }
 
         // const fullName = `${memberData.fname} ${memberData.mname || ""} ${memberData.lname}`.trim();
-        // saveMemberData(fullName, memberData.Card_No);
+        // saveMemberData(fullName, memberData.idnum);
       }
       setRfid("");
     } catch {
@@ -134,13 +134,13 @@ const Guard = () => {
   }, [rfid, scanMode, handleRFIDSubmit]);
 
   // Save scanned log
-  // const saveMemberData = (fullName, cardNumber) => {
+  // const saveMemberData = (fullName, IDNum) => {
   //   const timestamp = new Date().toLocaleString();
   //   axios
   //     .post("http://localhost:12991/saveMemberData", {
   //       memberName: fullName,
   //       timestamp,
-  //       cardNumber,
+  //       IDNum,
   //     })
   //     .catch(() => {});
   // };
@@ -182,7 +182,7 @@ const Guard = () => {
               onChange={(e) => setRfid(e.target.value)}
               autoFocus={!scanMode}
               placeholder={
-                scanMode ? "Waiting for scan..." : "Enter Card no., ID, or Name"
+                scanMode ? "Waiting for scan..." : "Enter ID no., or Name"
               }
               className="border border-black rounded-md p-2 bg-white w-full sm:w-[15rem]"
             />
@@ -255,7 +255,7 @@ const Guard = () => {
           {status === "valid" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-3 text-lg">
-                Welcome {member.lname}, {member.mname || ""} {member.fname} to Ebingo
+                Welcome {member.lname}, {member.mname || ""} {member.fname}, {member.idnum} to Ebingo
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
@@ -268,7 +268,7 @@ const Guard = () => {
           {status === "banned" && member && (
             <>
               <p className="text-white sm:text-3xl font-bold uppercase sm:px-5 pt-2 text-lg">
-                {member.lname}, {member.mname || ""} {member.fname} is BANNED
+                {member.lname}, {member.mname || ""} {member.fname}, {member.idnum} is BANNED
               </p>
               <div className="mt-2 sm:mt-4 text-white font-semibold sm:text-xl text-sm space-y-1">
                 {branches.length > 0
