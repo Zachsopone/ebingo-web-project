@@ -3,7 +3,7 @@ import { downloadVisitsExcel } from "../controllers/visit.controller.js";
 
 const router = express.Router();
 
-// download visits by Member ID and Card_No
-router.get("/download/:id/:cardNo", downloadVisitsExcel);
+// download visits by Member ID and IDNum
+router.get("/download/:id/:IDNum", downloadVisitsExcel);
 
 export default router;
