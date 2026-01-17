@@ -114,7 +114,7 @@ const MembersCard = ({ user, onEdit, onDelete, onBan, onUnban, selectedOption })
   const handleDownloadVisits = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/visits/download/${user.id}/${user.Card_No}`,
+        `${API_URL}/visits/download/${user.id}/${user.idnum}`,
         {
           method: "GET",
           headers: {
@@ -129,7 +129,7 @@ const MembersCard = ({ user, onEdit, onDelete, onBan, onUnban, selectedOption })
       }
 
       const blob = await response.blob();
-      saveAs(blob, `visits_${user.Card_No}.xlsx`);
+      saveAs(blob, `visits_${user.idnum}.xlsx`);
       enqueueSnackbar("Frequent of visits downloaded.", { variant: "success" });
 
     } catch {
@@ -178,7 +178,7 @@ const MembersCard = ({ user, onEdit, onDelete, onBan, onUnban, selectedOption })
       )}
 
       {renderCell("cnumber", user.cnumber)}
-      <td className="border  border-black text-center">{user.Card_No}</td>
+      <td className="border  border-black text-center">{user.idnum}</td>
       {renderCell("email", user.email)}
       {renderCell("now", user.now)}
         
@@ -371,7 +371,7 @@ MembersCard.propTypes = {
     permaddress: PropTypes.string,
     cstatus: PropTypes.string,
     cnumber: PropTypes.string,
-    Card_No: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    idnum: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     email: PropTypes.string,
     now: PropTypes.string,
     risk_assessment: PropTypes.string,
