@@ -17,7 +17,6 @@ const addMember = async (req, res) => {
       birthdate,
       cstatus,
       cnumber,
-      Card_No,
       gender,
       email,
       now,
@@ -45,7 +44,6 @@ const addMember = async (req, res) => {
       birthdate,
       cstatus,
       cnumber,
-      Card_No,
       gender,
       email,
       now,
@@ -101,13 +99,13 @@ const addMember = async (req, res) => {
       INSERT INTO members (
         branch_id, fname, mname, lname, age,
         presaddress, permaddress, birthdate,
-        cstatus, cnumber, Card_No,
+        cstatus, cnumber,
         gender, email, now, sof, mi,
         nationality, typeofid, filename, filename2,
         idnum, path, path2, risk_assessment,
         created_date, created_time
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db.execute(sql, [
@@ -121,7 +119,6 @@ const addMember = async (req, res) => {
       birthdate,
       cstatus,
       cnumber,
-      Card_No,
       gender,
       email,
       now,
@@ -150,7 +147,6 @@ const addMember = async (req, res) => {
       birthdate,
       cstatus,
       cnumber,
-      Card_No,
       gender,
       email,
       now,
