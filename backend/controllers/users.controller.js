@@ -103,6 +103,7 @@ export const updateUser = async (req, res) => {
 const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
 export const addUser = async (req, res) => {
+  
   try {
     let { 
       Firstname, Middlename, Lastname, Age, Contactnumber, 
