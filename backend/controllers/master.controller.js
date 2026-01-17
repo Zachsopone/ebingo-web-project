@@ -17,7 +17,6 @@ export const getMasterList = async (req, res) => {
         DATE_FORMAT(m.birthdate, '%m/%d/%Y') AS Birthdate,
         m.cstatus                         AS \`Civil Status\`,
         m.cnumber                         AS \`Contact Number\`,
-        m.Card_No                         AS \`Card Number\`,
         m.gender                          AS Gender,
         m.email                           AS \`Email Address\`,
         m.now                             AS \`Nature of Work\`,
