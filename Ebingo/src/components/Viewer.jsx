@@ -71,7 +71,7 @@ const Viewer = ({ memberId, onClose }) => {
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = `Player_Registration_${member.Card_No}.docx`;
+              a.download = `Player_Registration_${member.idnum}.docx`;
               a.click();
               URL.revokeObjectURL(url);
             } catch {
@@ -242,11 +242,6 @@ const Viewer = ({ memberId, onClose }) => {
                   </div>
 
                   <div className="space-y-6 break-words text-left mt-[4.7rem]">
-                    <div className="flex flex-col text-left">
-                      <span className="font-semibold text-[1.06rem] mb-1">Card Number:</span>
-                      <p className="text-[1.06rem] break-words">{member.Card_No}</p>
-                    </div>
-
                     <div className="flex flex-col text-left">
                       <span className="font-semibold text-[1.06rem] mb-1">Monthly Income:</span>
                       <p className="text-[1.06rem] break-words">{member.mi}</p>
