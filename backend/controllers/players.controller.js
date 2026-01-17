@@ -17,7 +17,6 @@ export const downloadPlayersByDateRange = async (req, res) => {
         m.fname AS FirstName,
         m.mname AS MiddleName,
         m.lname AS LastName,
-        m.Card_No AS CardNo,
         b.sname AS Branch,
         DATE_FORMAT(m.created_date, '%m/%d/%Y') AS Date,
         DATE_FORMAT(m.created_time, '%h:%i %p') AS Time,
