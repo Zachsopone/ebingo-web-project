@@ -24,7 +24,6 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
     birthdate: "",
     cstatus: "",
     cnumber: "",
-    Card_No: "",
     email: "",
     now: "",
     sof: "",
@@ -84,7 +83,6 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
         "birthdate",
         "cstatus",
         "cnumber",
-        "Card_No",
         "gender",
         "email",
         "now",
@@ -416,13 +414,6 @@ const AddMember = ({ setPopupType, onMemberAdded }) => {
               // Only allow numbers
               e.target.value = e.target.value.replace(/[^0-9]/g, "");
               }}
-            />
-            <input
-              className="w-[30%] outline-none border ml-4 mt-4 p-2 border-black rounded-md"
-              type="number"
-              placeholder="Card Number"
-              required
-              onChange={(e) => setValues({ ...values, Card_No: e.target.value })}
             />
             <input
               className="w-[30%] outline-none border ml-4 mt-4 p-2 border-black rounded-md"
