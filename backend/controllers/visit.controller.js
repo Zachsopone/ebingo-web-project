@@ -9,6 +9,7 @@ export const downloadVisitsExcel = async (req, res) => {
       `SELECT m.fname AS FirstName, 
               m.mname AS MiddleName, 
               m.lname AS LastName, 
+              m.idnum AS IDNumber,
               b.sname AS Branch, 
               DATE_FORMAT(v.date, '%m/%d/%Y') AS Date,
               DATE_FORMAT(v.time_in, '%h:%i %p') AS Time,
