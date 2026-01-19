@@ -1,50 +1,27 @@
-import fs from "fs";
-import path from "path";
-
-const LOCAL_PUBLIC = path.join(process.cwd(), "public");
-const LOCAL_UPLOAD = path.join(LOCAL_PUBLIC, "upload");
-const LOCAL_VALID  = path.join(LOCAL_PUBLIC, "valid");
-
-[LOCAL_UPLOAD, LOCAL_VALID].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
-
-const copyFile = (src, dest) => {
-  fs.copyFileSync(src, dest);
-};
-
 const uploadImages = (req, res) => {
   try {
     const profile = req.files?.profile?.[0];
     const valid   = req.files?.valid?.[0];
 
     if (!profile || !valid) {
-      return res.status(400).json({ error: "Both images are required" });
+      return res.status(400).json({ error: "Both profile and valid ID images are required" });
     }
 
-    // COPY → local public folders
-    copyFile(profile.path, path.join(LOCAL_UPLOAD, profile.filename));
-    copyFile(valid.path, path.join(LOCAL_VALID, valid.filename));
-
-    if (!fs.existsSync(profile.path) || !fs.existsSync(valid.path)) {
-      return res.status(500).json({ error: "Uploaded files not found on server." });
-    }
-
+    // Return the **relative URLs** that match your static middleware mounts
     res.status(200).json({
-      message: "Files uploaded successfully",
+      message: "Images uploaded successfully to persistent storage",
       profile: {
         filename: profile.filename,
-        path: `/upload/${profile.filename}`
+        path: `/upload/${profile.filename}`,
       },
       valid: {
         filename: valid.filename,
-        path: `/valid/${valid.filename}`
-      }
+        path: `/valid/${valid.filename}`,
+      },
     });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Upload controller error:", err);
+    res.status(500).json({ error: "Upload processing failed" });
   }
 };
 
