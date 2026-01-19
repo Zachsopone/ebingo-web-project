@@ -67,23 +67,46 @@ const addMember = async (req, res) => {
         .json({ error: `Missing required fields: ${missingFields.join(", ")}` });
     }
 
-    // ✅ Check if a member with same idnum exists
-    const [existingMembers] = await db.execute(
-      `SELECT fname, mname, lname FROM members WHERE idnum = ?`,
+    // ID number must be globally unique
+    const [idCheck] = await db.execute(
+      "SELECT id, branch_id FROM members WHERE idnum = ?",
       [idnum]
     );
 
-    if (existingMembers.length > 0) {
-      const nameMismatch = existingMembers.some(
-        (m) =>
-          m.fname !== fname || m.mname !== mname || m.lname !== lname
-      );
-      if (nameMismatch) {
-        return res.status(400).json({
-          error:
-            "Cannot add member: idnum already exists with different name."
-        });
-      }
+    if (idCheck.length > 0) {
+      return res.status(400).json({
+        error: "This ID number is already used.",
+      });
+    }
+
+    // Full name must be globally unique
+    const [nameCheck] = await db.execute(
+      `SELECT id, branch_id 
+       FROM members 
+       WHERE fname = ? AND mname = ? AND lname = ?`,
+      [fname, mname, lname]
+    );
+
+    if (nameCheck.length > 0) {
+      return res.status(400).json({
+        error: "This full name is already registered.",
+      });
+    }
+
+    // (Extra safety) Same person should not exist in THIS branch
+    // (Normally redundant because of rule 1 & 2, but kept for explicitness)
+    const [samePersonInThisBranch] = await db.execute(
+      `SELECT id FROM members 
+       WHERE branch_id = ? 
+       AND fname = ? AND mname = ? AND lname = ? 
+       AND idnum = ?`,
+      [branch_id, fname, mname, lname, idnum]
+    );
+
+    if (samePersonInThisBranch.length > 0) {
+      return res.status(400).json({
+        error: "This exact member is existed in this branch.",
+      });
     }
 
     // Generate created_date and created_time
@@ -136,35 +159,7 @@ const addMember = async (req, res) => {
       created_time,
     ]);
 
-    const newMember = {
-      branch_id,
-      fname,
-      mname,
-      lname,
-      age,
-      presaddress,
-      permaddress,
-      birthdate,
-      cstatus,
-      cnumber,
-      gender,
-      email,
-      now,
-      sof,
-      mi,
-      nationality,
-      typeofid,
-      filename,
-      filename2,
-      idnum,
-      profilePath,
-      validPath,
-      risk_assessment,
-      created_date,
-      created_time,
-    };
-
-    res.status(201).json({ message: "Member added successfully", newMember });
+    res.status(201).json({ message: "Member added successfully", memberId: result.insertId });
 
   } catch (error) {
     console.error("Error inserting member:", error.message);
