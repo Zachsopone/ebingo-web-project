@@ -5,16 +5,37 @@ import Members from "./Members";
 import Branches from "./Branches";
 import axios from "axios";
 import PropTypes from "prop-types";
+import Cookies from "js-cookie";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Header = ({ fixedBranchId }) => {
+const Header = ({ fixedBranchId: propBranchId }) => {
   const location = useLocation();
   const [popupType, setPopupType] = useState(false);
   const [dateTime, setDateTime] = useState(new Date());
   const [branchName, setBranchName] = useState("");
 
   const isBranchesPage = location.pathname.includes("branches");
+
+  // Get branchId
+  const getBranchId = () => {
+    if (propBranchId !== undefined && propBranchId !== null) {
+      return propBranchId;
+    }
+
+    const token = Cookies.get("accessToken");
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.branch_id || null;
+    } catch (err) {
+      console.warn("Failed to decode token in Header:", err);
+      return null;
+    }
+  };
+
+  const currentBranchId = getBranchId();
 
   // Live date & time
   useEffect(() => {
@@ -25,20 +46,24 @@ const Header = ({ fixedBranchId }) => {
     return () => clearInterval(timer);
   }, []);
 
-// Fetch branch name from full list
-useEffect(() => {
-  if (!fixedBranchId) return;
-  axios
-    .get(`${API_URL}/branches`, { withCredentials: true })  // Add withCredentials if using cookie auth
-    .then(res => {
-      const branch = res.data.find(b => b.id === fixedBranchId);
-      setBranchName(branch ? branch.sname : "");
-    })
-    .catch(err => {
-      console.error("Error fetching branches:", err);
+// Fetch branch name
+  useEffect(() => {
+    if (!currentBranchId) {
       setBranchName("");
-    });
-}, [fixedBranchId]);
+      return;
+    }
+
+    axios
+      .get(`${API_URL}/branches`, { withCredentials: true })
+      .then((res) => {
+        const branch = res.data.find((b) => b.id === Number(currentBranchId));
+        setBranchName(branch?.sname || "");
+      })
+      .catch((err) => {
+        console.error("Failed to load branch name:", err);
+        setBranchName("");
+      });
+  }, [currentBranchId]);
 
   return (
     <header className="bg-[#A8D5E3] w-full h-[3.2rem] flex items-center relative px-4">
