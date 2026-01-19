@@ -96,7 +96,7 @@ app.delete("/delete/:filename", (req, res) => {
 });
 
 // Authentication routes
-app.get("/kaizen", verifyUser(["kaizen"]), (req, res) => {
+app.get("/kaizen", verifyUser(["superadmin", "kaizen"]), (req, res) => {
   return res.json({ Status: "Success", name: req.user });
 });
 app.get("/superadmin", verifyUser(["superadmin", "kaizen"]), (req, res) => {
