@@ -53,7 +53,7 @@ const Kaizen = () => {
 
   return (
     <div className="w-full h-screen">
-      <Header fixedBranchId={branchId}/>
+      <Header/>
       <Navigation triggerRefetch={() => setRefetchKey(prev => prev + 1)} />
       <Members refetchKey={refetchKey} />
       <button
