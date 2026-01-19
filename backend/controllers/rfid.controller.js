@@ -106,12 +106,13 @@ const rfid = async (req, res) => {
     const time = `${hh}:${min}:${ss}`;      // HH:MM:SS (24-hour)
 
     await db.execute(
-      `INSERT INTO visit (fname, mname, lname, branch_id, Date, time_in, risk_assessment, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO visit (fname, mname, lname, idnum, branch_id, Date, time_in, risk_assessment, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         member.fname,
         member.mname || "",
         member.lname,
+        member.idnum,
         guardBranchId,
         date,
         time,
