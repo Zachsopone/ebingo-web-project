@@ -11,45 +11,48 @@ const STORAGE_ROOT = process.env.STORAGE_PATH || path.join(process.cwd(), "stora
 const UPLOAD_DIR = path.join(STORAGE_ROOT, "upload");
 const VALID_DIR  = path.join(STORAGE_ROOT, "valid");
 
-// Ensure directories exist
-[UPLOAD_DIR, VALID_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  console.log(`Created directory: ${dir}`);
+// Create folders if they don't exist (good practice, harmless even on Render)
+[UPLOAD_DIR, VALID_DIR].forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`Created persistent directory: ${dir}`);
+  }
 });
 
-// Custom storage 
+// Multer storage → saves directly to persistent disk
 const storage = multer.diskStorage({
   destination: (_req, file, cb) => {
     if (file.fieldname === "profile") return cb(null, UPLOAD_DIR);
-    if (file.fieldname === "valid") return cb(null, VALID_DIR);
-    cb(new Error("Invalid field name"));
+    if (file.fieldname === "valid")   return cb(null, VALID_DIR);
+    cb(new Error("Invalid fieldname"));
   },
   filename: (_req, file, cb) => {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
-  }
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}${ext}`);
+  },
 });
 
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowed = ["image/jpeg", "image/png"];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only JPEG, PNG, GIF and WebP images allowed"), false);
+      cb(new Error("Only JPEG and PNG images allowed"), false);
     }
-  }
+  },
 });
 
 // Route for uploading images
 router.post(
-  '/upload',
+  "/upload",
   upload.fields([
-    { name: 'profile', maxCount: 1 },
-    { name: 'valid',   maxCount: 1 }
+    { name: "profile", maxCount: 1 },
+    { name: "valid",   maxCount: 1 },
   ]),
-  (err, _req, res, next) => {
+  (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
     }
