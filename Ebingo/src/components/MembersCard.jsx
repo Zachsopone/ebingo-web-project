@@ -241,7 +241,7 @@ const MembersCard = ({ user, onEdit, onDelete, onBan, onUnban, selectedOption })
                   onClick={() => setIsEditing(true)}
                 />
               </div>
-              {["kaizen", "superadmin"].includes(role.toLowerCase()) && (
+              {["cashier", "kaizen", "admin", "superadmin"].includes(role.toLowerCase()) && (
                 <div className="tooltip-container">
                   <span className="tooltip">Delete Member</span>
                   <MdDeleteOutline
