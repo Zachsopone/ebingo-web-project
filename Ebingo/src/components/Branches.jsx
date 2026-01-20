@@ -231,9 +231,9 @@ const Branches = () => {
     const role = Cookies.get("userRole") || "";       // make sure you set this at login
     const branchId = Cookies.get("userBranchId") || ""; // make sure you set this at login
 
-    // If user is superadmin and branch id exists, send it in the body (POST).
+    // If user is admin and branch id exists, send it in the body (POST).
     // Also set withCredentials so cookies (accessToken) will be sent to the API.
-    if (role.toLowerCase() === "superadmin" && branchId) {
+    if (role.toLowerCase() === "admin" && branchId) {
       axios
         .post(
           `${API_URL}/branches`,
