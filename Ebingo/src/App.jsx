@@ -3,6 +3,7 @@ import { Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 
 const Kaizen = lazy(() => import("./pages/Kaizen"));
+const Admin = lazy(() => import("./pages/Admin"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const Cashier = lazy(() => import("./pages/Cashier"));
 const Guard = lazy(() => import("./pages/Guard"));
@@ -25,6 +26,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["kaizen"]}>
               <Kaizen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/members"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <Admin />
             </ProtectedRoute>
           }
         />
@@ -62,7 +71,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/admin/branches"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <Branches />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/superadmin/branches"
           element={
@@ -75,6 +91,14 @@ function App() {
           path="/kaizen/users"
           element={
             <ProtectedRoute allowedRoles={["kaizen"]}>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
               <Users />
             </ProtectedRoute>
           }
