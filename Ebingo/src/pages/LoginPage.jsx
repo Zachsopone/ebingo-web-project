@@ -64,6 +64,9 @@ const LoginPage = () => {
         case "kaizen":
           navigate("/kaizen/members");
           break;
+        case "admin":
+          navigate("/admin/members");
+          break;
         case "superadmin":
           navigate("/superadmin/members");
           break;
