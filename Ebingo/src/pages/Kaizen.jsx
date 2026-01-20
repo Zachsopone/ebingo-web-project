@@ -22,7 +22,7 @@ const Kaizen = () => {
     } else {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        if (payload.role.toLowerCase() !== "kaizen" && payload.role.toLowerCase() !== "superadmin") {
+        if (payload.role.toLowerCase() !== "kaizen") {
           enqueueSnackbar("Unauthorized access", { variant: "error" });
           navigate("/");
         }
