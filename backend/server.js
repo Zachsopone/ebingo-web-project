@@ -96,16 +96,19 @@ app.delete("/delete/:filename", (req, res) => {
 });
 
 // Authentication routes
-app.get("/kaizen", verifyUser(["superadmin", "kaizen"]), (req, res) => {
-  return res.json({ Status: "Success", name: req.user });
+app.get("/kaizen", verifyUser(["kaizen"]), (req, res) => {
+  return res.json({ Status: "IT Access", name: req.user });
 });
-app.get("/superadmin", verifyUser(["superadmin", "kaizen"]), (req, res) => {
+app.get("/admin", verifyUser(["admin"]), (req, res) => {
+  return res.json({ Status: "Admin Access", name: req.user });
+});
+app.get("/superadmin", verifyUser(["superadmin"]), (req, res) => {
   return res.json({ Status: "Superadmin Access", name: req.user });
 });
-app.get("/cashier", verifyUser(["cashier", "superadmin", "kaizen"]), (req, res) => {
+app.get("/cashier", verifyUser(["cashier"]), (req, res) => {
   return res.json({ Status: "Cashier Access", name: req.user });
 });
-app.get("/guard", verifyUser(["guard", "cashier", "superadmin", "kaizen"]), (req, res) => {
+app.get("/guard", verifyUser(["guard"]), (req, res) => {
   return res.json({ Status: "Guard Access", name: req.user });
 });
 
