@@ -217,7 +217,7 @@ const Guard = ({ fixedBranchId: propBranchId }) => {
         )}
       </div>
       {/* Top bar */}
-      <div className="w-full flex flex-col sm:flex-row justify-between items-center p-5 sm:pb-7 border-b border-gray-400 relative gap-4 sm:gap-0">
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center pt-0 px-5 sm:pb-7 border-b border-gray-400 relative gap-4 sm:gap-0">
         {/* Scan form */}
         <form
           onSubmit={scanMode ? (e) => e.preventDefault() : handleSubmit}
