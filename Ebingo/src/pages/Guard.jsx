@@ -209,13 +209,7 @@ const Guard = ({ fixedBranchId: propBranchId }) => {
 
   return (
     <main className="bg-[#F2F0EA] w-full h-screen flex flex-col overflow-hidden">
-      <div className="flex items-center justify-center py-2 ...">
-        {branchName && (
-          <span className="text-lg font-semibold uppercase">
-            {branchName}
-          </span>
-        )}
-      </div>
+      
       {/* Top bar */}
       <div className="w-full flex flex-col sm:flex-row justify-between items-center p-5 sm:pb-7 border-b border-gray-400 relative gap-4 sm:gap-0">
         {/* Scan form */}
