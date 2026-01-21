@@ -2,10 +2,12 @@ import axios from "axios";
 import { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
 import { motion, AnimatePresence } from "framer-motion";
+import PropTypes from "prop-types";
+
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Guard = () => {
+const Guard = ({ fixedBranchId: propBranchId }) => {
   const [member, setMember] = useState(null);
   const [branches, setBranches] = useState([]);
   const [profileIdUrl, setProfileIdUrl] = useState(null);
@@ -14,6 +16,46 @@ const Guard = () => {
   const [status, setStatus] = useState("");
   const [dateTime, setDateTime] = useState(new Date());
   const [imageError, setImageError] = useState(false);
+  const [branchName, setBranchName] = useState("");
+
+  // Get branchId
+  const getBranchId = () => {
+    if (propBranchId !== undefined && propBranchId !== null) {
+      return propBranchId;
+    }
+
+    const token = Cookies.get("accessToken");
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.branch_id || null;
+    } catch (err) {
+      console.warn("Failed to decode token in Header:", err);
+      return null;
+    }
+  };
+  
+    const currentBranchId = getBranchId();
+
+  // Fetch branch name
+  useEffect(() => {
+    if (!currentBranchId) {
+      setBranchName("");
+      return;
+    }
+
+    axios
+      .get(`${API_URL}/branches`, { withCredentials: true })
+      .then((res) => {
+        const branch = res.data.find((b) => b.id === Number(currentBranchId));
+        setBranchName(branch?.sname || "");
+      })
+      .catch((err) => {
+        console.error("Failed to load branch name:", err);
+        setBranchName("");
+      });
+  }, [currentBranchId]);
 
   // Keep live date & time
   useEffect(() => {
@@ -174,6 +216,13 @@ const Guard = () => {
           onSubmit={scanMode ? (e) => e.preventDefault() : handleSubmit}
           className="flex flex-col gap-2 sm:w-auto w-full"
         >
+          <div className="flex items-center justify-center py-2 ...">
+            {branchName && (
+              <span className="text-lg font-semibold uppercase">
+                {branchName}
+              </span>
+            )}
+          </div>
           <label className="text-lg">Scan ID Number / Name</label>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
@@ -316,6 +365,14 @@ const Guard = () => {
       </div>
     </main>
   );
+};
+
+Guard.propTypes = {
+  fixedBranchId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
+
+Guard.defaultProps = {
+  fixedBranchId: null,
 };
 
 export default Guard;
