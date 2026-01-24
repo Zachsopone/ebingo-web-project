@@ -84,7 +84,7 @@ const addMember = async (req, res) => {
       if (sameFullName) {
         if (match.branch_id === branch_id) {
           return res.status(400).json({
-            error: "This exact member already exists in this branch.",
+            error: "This member already exists in this branch.",
           });
         } else {
           // Same person (name + ID) in a different branch → ALLOW
@@ -107,7 +107,7 @@ const addMember = async (req, res) => {
 
       if (existingByName.length > 0) {
         return res.status(400).json({
-          error: "A member with this full name is already registered.",
+          error: "Member with this full name is already registered.",
         });
       }
 
@@ -125,7 +125,7 @@ const addMember = async (req, res) => {
 
     if (samePersonInBranch.length > 0) {
       return res.status(400).json({
-        error: "This exact member already exists in this branch.",
+        error: "This member already exists in this branch.",
       });
     }
 
