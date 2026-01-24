@@ -67,35 +67,55 @@ const addMember = async (req, res) => {
         .json({ error: `Missing required fields: ${missingFields.join(", ")}` });
     }
 
-    // ID number must be globally unique
-    const [idCheck] = await db.execute(
-      "SELECT id, branch_id FROM members WHERE idnum = ?",
+    // Check if this exact ID number already exists anywhere
+    const [existingById] = await db.execute(
+      "SELECT id, branch_id, fname, mname, lname FROM members WHERE idnum = ?",
       [idnum]
     );
 
-    if (idCheck.length > 0) {
-      return res.status(400).json({
-        error: "This ID number is already used.",
-      });
+    if (existingById.length > 0) {
+      const match = existingById[0];
+
+      const sameFullName =
+        match.fname === fname &&
+        match.mname === mname &&
+        match.lname === lname;
+
+      if (sameFullName) {
+        if (match.branch_id === branch_id) {
+          return res.status(400).json({
+            error: "This exact member already exists in this branch.",
+          });
+        } else {
+          // Same person (name + ID) in a different branch → ALLOW
+          // Proceed to insert
+        }
+      } else {
+        // ID is used by a completely different person → REJECT
+        return res.status(400).json({
+          error: "This ID number is already used by another person.",
+        });
+      }
+    } else {
+      // ID is new → now check if full name already exists anywhere
+      const [existingByName] = await db.execute(
+        `SELECT id, branch_id, idnum 
+         FROM members 
+         WHERE fname = ? AND mname = ? AND lname = ?`,
+        [fname, mname, lname]
+      );
+
+      if (existingByName.length > 0) {
+        return res.status(400).json({
+          error: "A member with this full name is already registered.",
+        });
+      }
+
+      // No conflict
     }
 
-    // Full name must be globally unique
-    const [nameCheck] = await db.execute(
-      `SELECT id, branch_id 
-       FROM members 
-       WHERE fname = ? AND mname = ? AND lname = ?`,
-      [fname, mname, lname]
-    );
-
-    if (nameCheck.length > 0) {
-      return res.status(400).json({
-        error: "This full name is already registered.",
-      });
-    }
-
-    // (Extra safety) Same person should not exist in THIS branch
-    // (Normally redundant because of rule 1 & 2, but kept for explicitness)
-    const [samePersonInThisBranch] = await db.execute(
+    // extra safety check (same person in same branch)
+    const [samePersonInBranch] = await db.execute(
       `SELECT id FROM members 
        WHERE branch_id = ? 
        AND fname = ? AND mname = ? AND lname = ? 
@@ -103,9 +123,9 @@ const addMember = async (req, res) => {
       [branch_id, fname, mname, lname, idnum]
     );
 
-    if (samePersonInThisBranch.length > 0) {
+    if (samePersonInBranch.length > 0) {
       return res.status(400).json({
-        error: "This exact member is existed in this branch.",
+        error: "This exact member already exists in this branch.",
       });
     }
 
