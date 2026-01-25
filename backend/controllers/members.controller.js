@@ -262,11 +262,12 @@ const readMember = async (req, res) => {
   }
 };
 
-// DELETE member by ID
+// DELETE member by ID & remove associated images from persistent disk
 const deleteMember = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Fetch the filenames and paths from DB
     const [rows] = await db.execute("SELECT filename, filename2 FROM members WHERE id = ?", [id]);
 
     if (rows.length === 0) {
@@ -275,35 +276,56 @@ const deleteMember = async (req, res) => {
 
     const { filename, filename2 } = rows[0];
 
+    // Delete the member row
     const [result] = await db.execute("DELETE FROM members WHERE id = ?", [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Member not found" });
     }
 
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
+    // Delete files from disk (only if filenames exist)
+    const STORAGE_ROOT = process.env.STORAGE_PATH || path.join(process.cwd(), "storage");
 
-    const uploadPath = path.join(__dirname, "../../Ebingo/public/upload", filename);
-    const validPath = path.join(__dirname, "../../Ebingo/public/valid", filename2);
+    const filesToDelete = [];
 
-    [uploadPath, validPath].forEach((filePath) => {
-      if (filePath && fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error("Error deleting file:", err);
-          }
-        });
+    if (filename) {
+      const profileFsPath = path.join(STORAGE_ROOT, "upload", filename);
+      filesToDelete.push(profileFsPath);
+    }
+
+    if (filename2) {
+      const validFsPath = path.join(STORAGE_ROOT, "valid", filename2);
+      filesToDelete.push(validFsPath);
+    }
+
+    // Delete files synchronously
+    for (const filePath of filesToDelete) {
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`Deleted file: ${filePath}`);
+        } catch (unlinkErr) {
+          console.error(`Failed to delete file ${filePath}:`, unlinkErr.message);
+        }
+      } else {
+        console.log(`File not found on disk: ${filePath}`);
       }
+    }
+
+    res.status(200).json({ 
+      message: "Member deleted successfully",
+      deletedFiles: filesToDelete.length,
+      note: "image files were removed if they existed"
     });
 
-    res.status(200).json({ message: "Member deleted successfully" });
-
   } catch (error) {
-    console.error("Error deleting member:", error);
-    res.status(500).json({ message: "Server error while deleting member" });
+    console.error("Error deleteMember:", error.message, error.stack);
+    res.status(500).json({ 
+      error: "Server error while deleting member",
+      details: error.message 
+    });
   }
-};
+}
 
 // Get single member by ID with branch name
 const getMemberById = async (req, res) => {
