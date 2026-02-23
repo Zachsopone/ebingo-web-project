@@ -20,7 +20,7 @@ build
 .env.local
 
 # Ignore workspace setup file
-workspaces.npmrc
+#workspaces.npmrc
 
 # --- Logs ---
 *.log
@@ -28,6 +28,6 @@ npm-debug.log*
 
 # --- Specific Folders/Files in your structure ---
 # Ignore the entire Barcode Installer folder
-Barcode Installer/
+#Barcode Installer/
 
 Readme.txt
